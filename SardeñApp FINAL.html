@@ -1,0 +1,2486 @@
+<!DOCTYPE html>
+<html lang="gl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.5" />
+  <meta name="theme-color" content="#16456e" />
+  <title>🚐 Viaxe en Furgo · Sardeña · Pirineos</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    /* ============================================================
+       VARIABLES E RESET
+       ============================================================ */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    :root {
+      --mar: #16456e;
+      --tq: #2c8f87;
+      --ocre: #c08a2d;
+      --terra: #b65a3c;
+      --crema: #faf6ec;
+      --card: #ffffff;
+      --tinta: #2e2a24;
+      --suave: #5c554a;
+      --borde: #d9c8b2;
+      --shadow: 0 8px 20px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.04);
+      --radius: 20px;
+      --transition: 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --header-bg: var(--mar);
+      --header-text: #fff;
+      --tab-bg: var(--mar);
+      --tab-text: rgba(255, 255, 255, 0.7);
+      --tab-active: var(--tq);
+      --badge-bg: var(--ocre);
+      --badge-text: #fff;
+    }
+    body.modo-camino {
+      --mar: #6B5344;
+      --tq: #8B6B4F;
+      --ocre: #C4A882;
+      --terra: #D4B896;
+      --crema: #F5EDE0;
+      --card: #ffffff;
+      --tinta: #3D322A;
+      --suave: #7A6A5A;
+      --borde: #D4C4B0;
+      --header-bg: #6B5344;
+      --header-text: #fff;
+      --tab-bg: #6B5344;
+      --tab-text: rgba(255, 255, 255, 0.7);
+      --tab-active: #8B6B4F;
+      --badge-bg: #5A7D5A;
+      --badge-text: #fff;
+    }
+    body.dark {
+      --crema: #10151d;
+      --card: #1a2230;
+      --tinta: #e9e4d8;
+      --suave: #a8a294;
+      --borde: #2c3648;
+      --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    body.dark.modo-camino {
+      --crema: #12100e;
+      --card: #1e1a17;
+      --tinta: #e8ddd2;
+      --suave: #a89888;
+      --borde: #3d342e;
+    }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--crema);
+      color: var(--tinta);
+      padding-bottom: 80px;
+      transition: background var(--transition), color var(--transition);
+      line-height: 1.5;
+    }
+    a,
+    button {
+      transition: all var(--transition);
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* MENÚ INICIAL */
+    #menu-inicial {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      background: linear-gradient(135deg, #0f2e4a 0%, #1a4a5a 50%, #2c5f5a 100%);
+      color: #fff;
+      text-align: center;
+    }
+    #menu-inicial h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.5px;
+    }
+    #menu-inicial .sub {
+      font-size: 1.2rem;
+      opacity: 0.8;
+      margin-bottom: 3rem;
+    }
+    .menu-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      max-width: 700px;
+      width: 100%;
+    }
+    .menu-card {
+      flex: 1 1 250px;
+      max-width: 300px;
+      background: rgba(255, 255, 255, 0.10);
+      backdrop-filter: blur(8px);
+      border-radius: 28px;
+      padding: 2.5rem 1.8rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      text-align: center;
+      color: #fff;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .menu-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      background: rgba(255, 255, 255, 0.20);
+      border-color: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    }
+    .menu-card .icon {
+      font-size: 3.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .menu-card .nome {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .menu-card .desc {
+      font-size: 0.9rem;
+      opacity: 0.75;
+      max-width: 200px;
+    }
+    .menu-card .badge {
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      padding: 0.2rem 1.2rem;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-top: 0.5rem;
+    }
+    .menu-card.camino .badge {
+      background: #5A7D5A;
+    }
+    .menu-card.illa .badge {
+      background: #c08a2d;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 12px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      transition: background var(--transition);
+    }
+    header .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    header h1 .volver {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 4px 12px;
+      border-radius: 40px;
+      transition: all var(--transition);
+      font-weight: 400;
+    }
+    header h1 .volver:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    header .sub {
+      font-size: 0.7rem;
+      opacity: 0.85;
+      margin-top: 2px;
+      font-weight: 400;
+    }
+    .hbtn {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #fff;
+      border-radius: 30px;
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: background var(--transition);
+    }
+    .hbtn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    .prog {
+      font-size: 0.75rem;
+      opacity: 0.9;
+      margin-top: 6px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .prog b {
+      color: #ffd98a;
+    }
+
+    /* TABS INFERIOR */
+    nav.tabs {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      background: var(--tab-bg);
+      z-index: 200;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+      backdrop-filter: blur(4px);
+      padding: 4px 0 env(safe-area-inset-bottom);
+      transition: background var(--transition);
+    }
+    nav.tabs button {
+      flex: 1;
+      padding: 8px 0 10px;
+      border: none;
+      background: transparent;
+      color: var(--tab-text);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all var(--transition);
+      border-radius: 12px;
+      margin: 2px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    nav.tabs button i {
+      font-size: 1.2rem;
+    }
+    nav.tabs button span {
+      font-size: 0.6rem;
+      letter-spacing: 0.04em;
+      opacity: 0.7;
+    }
+    nav.tabs button.on {
+      color: #fff;
+      background: var(--tab-active);
+      box-shadow: 0 4px 12px rgba(44, 143, 135, 0.3);
+    }
+
+    .app-container {
+      display: none;
+    }
+    .app-container.on {
+      display: block;
+    }
+    section.tab {
+      display: none;
+      padding: 16px 16px 30px;
+      max-width: 820px;
+      margin: 0 auto;
+      animation: fadeUp 0.4s ease;
+    }
+    section.tab.on {
+      display: block;
+    }
+    @keyframes fadeUp {
+      0% {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ELEMENTOS COMÚNS */
+    .hint {
+      font-size: 0.85rem;
+      color: var(--suave);
+      margin: 12px 0 10px;
+      padding: 8px 14px;
+      background: rgba(44, 143, 135, 0.06);
+      border-radius: 30px;
+      display: inline-block;
+    }
+    #q {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 40px;
+      border: 1.5px solid var(--borde);
+      background: var(--card);
+      color: var(--tinta);
+      font-size: 0.95rem;
+      transition: border var(--transition), box-shadow var(--transition);
+      margin: 8px 0 4px;
+    }
+    #q:focus {
+      border-color: var(--tq);
+      box-shadow: 0 0 0 4px rgba(44, 143, 135, 0.1);
+      outline: none;
+    }
+    #qinfo {
+      font-size: 0.75rem;
+      color: var(--suave);
+      margin-bottom: 10px;
+      padding-left: 6px;
+    }
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 0 14px;
+      position: sticky;
+      top: 88px;
+      background: var(--crema);
+      z-index: 10;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+      flex-wrap: nowrap;
+    }
+    .chips button {
+      flex: 0 0 auto;
+      border: 1.5px solid var(--mar);
+      background: var(--card);
+      color: var(--mar);
+      border-radius: 40px;
+      padding: 8px 18px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .chips button.on {
+      background: var(--mar);
+      color: #fff;
+      border-color: var(--mar);
+      box-shadow: 0 4px 12px rgba(22, 69, 110, 0.2);
+    }
+    .chips button.today {
+      background: var(--terra);
+      border-color: var(--terra);
+      color: #fff;
+    }
+    .banner {
+      background: var(--terra);
+      color: #fff;
+      border-radius: 40px;
+      padding: 12px 20px;
+      font-size: 0.9rem;
+      margin: 12px 0;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(182, 90, 60, 0.2);
+    }
+    details.day {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin: 14px 0;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: all var(--transition);
+      border: 1px solid transparent;
+    }
+    details.day.today {
+      border-color: var(--ocre);
+      box-shadow: 0 0 0 3px rgba(192, 138, 45, 0.2), var(--shadow);
+    }
+    details.day.hidden {
+      display: none;
+    }
+    summary {
+      padding: 16px 18px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--mar);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      list-style: none;
+      font-size: 0.95rem;
+      user-select: none;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    summary .km {
+      font-weight: 400;
+      font-size: 0.7rem;
+      color: var(--suave);
+      white-space: nowrap;
+      background: rgba(0, 0, 0, 0.04);
+      padding: 2px 12px;
+      border-radius: 30px;
+    }
+    .badge {
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      font-size: 0.6rem;
+      border-radius: 30px;
+      padding: 2px 12px;
+      margin-right: 8px;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+    .stop {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px 18px;
+      border-top: 1px dashed var(--borde);
+      transition: background var(--transition);
+    }
+    .stop.hit,
+    .curio li.hit,
+    .blk.hit {
+      background: rgba(192, 138, 45, 0.12);
+      border-radius: 12px;
+    }
+    .stop input[type=checkbox] {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--tq);
+      flex: 0 0 auto;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+    .stop .stxt {
+      flex: 1;
+      font-size: 0.88rem;
+    }
+    .stop .stxt b {
+      color: var(--mar);
+    }
+    .note {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--suave);
+      margin-top: 3px;
+    }
+    .acts {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1.5px solid var(--mar);
+      color: var(--mar);
+      background: var(--card);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all var(--transition);
+      line-height: 1.2;
+    }
+    .btn i {
+      font-size: 0.9rem;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    }
+    .btn.go {
+      background: var(--mar);
+      color: #fff;
+      border-color: var(--mar);
+    }
+    .btn.tq {
+      border-color: var(--tq);
+      color: var(--tq);
+    }
+    .btn.nav {
+      border-color: var(--terra);
+      color: var(--terra);
+    }
+    .btn.sp {
+      border-color: var(--tq);
+      color: var(--tq);
+    }
+    .btn.ruta {
+      background: var(--mar);
+      color: #fff;
+      border-color: var(--mar);
+    }
+    .btn.sm {
+      padding: 5px 12px;
+      font-size: 0.75rem;
+    }
+    .btn.print {
+      border-style: dashed;
+    }
+    .btn.big {
+      padding: 14px 24px;
+      font-size: 1.1rem;
+      background: var(--ocre);
+      color: #fff;
+      border-color: var(--ocre);
+    }
+    .status {
+      font-size: 0.8rem;
+      padding: 8px 14px;
+      border-radius: 30px;
+      background: rgba(44, 143, 135, 0.08);
+      margin-top: 8px;
+    }
+    .status.bad {
+      background: rgba(182, 90, 60, 0.10);
+    }
+    .curio {
+      margin: 8px 18px;
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      background: rgba(44, 143, 135, 0.04);
+      overflow: hidden;
+    }
+    .curio>summary {
+      font-size: 0.85rem;
+      padding: 10px 14px;
+      color: var(--tq);
+      font-weight: 600;
+    }
+    .curio ul {
+      margin: 0;
+      padding: 0 18px 14px 28px;
+      font-size: 0.85rem;
+    }
+    .curio li {
+      margin-bottom: 8px;
+    }
+    .blk {
+      padding: 12px 18px;
+      border-top: 1px dashed var(--borde);
+      font-size: 0.85rem;
+    }
+    .blk h4 {
+      margin: 0 0 6px;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--terra);
+    }
+    .blk ul {
+      margin: 4px 0 0;
+      padding-left: 20px;
+    }
+    .blk li {
+      margin-bottom: 4px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 60px;
+      border: 1.5px solid var(--borde);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      background: var(--crema);
+      color: var(--tinta);
+      font-family: inherit;
+      transition: border var(--transition);
+      resize: vertical;
+    }
+    textarea:focus {
+      border-color: var(--tq);
+      outline: none;
+    }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin: 14px 0;
+      padding: 16px 20px;
+      box-shadow: var(--shadow);
+      font-size: 0.9rem;
+      transition: all var(--transition);
+    }
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      color: var(--mar);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .warn {
+      border-left: 5px solid var(--terra);
+      background: rgba(182, 90, 60, 0.05);
+    }
+    .ok {
+      border-left: 5px solid var(--tq);
+      background: rgba(44, 143, 135, 0.05);
+    }
+    label.chk {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--borde);
+      font-size: 0.88rem;
+    }
+    label.chk:last-child {
+      border-bottom: 0;
+    }
+    label.chk input[type=checkbox] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--tq);
+      margin-top: 2px;
+      flex: 0 0 auto;
+    }
+    select {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 40px;
+      border: 1.5px solid var(--borde);
+      background: var(--crema);
+      color: var(--tinta);
+      font-size: 0.9rem;
+      margin: 6px 0;
+      appearance: none;
+    }
+    details.era {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin: 12px 0;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border-left: 6px solid var(--ocre);
+      transition: all var(--transition);
+    }
+    details.era.off {
+      opacity: 0.4;
+      filter: grayscale(0.3);
+    }
+    details.era.hit {
+      outline: 3px solid var(--tq);
+      outline-offset: 2px;
+    }
+    details.era>summary {
+      padding: 14px 18px;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      align-items: baseline;
+      font-weight: 600;
+    }
+    details.era>summary::-webkit-details-marker {
+      display: none;
+    }
+    .epoca {
+      font-weight: 700;
+      color: var(--mar);
+      font-size: 0.95rem;
+    }
+    .fechas {
+      font-size: 0.75rem;
+      color: var(--terra);
+      font-weight: 600;
+    }
+    .dias {
+      margin-left: auto;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #fff;
+      background: var(--tq);
+      border-radius: 30px;
+      padding: 2px 12px;
+      letter-spacing: 0.04em;
+    }
+    .ecorpo {
+      padding: 0 18px 16px;
+      font-size: 0.88rem;
+    }
+    .ecorpo .ruta {
+      margin: 10px 0 0;
+      padding: 8px 14px;
+      background: rgba(44, 143, 135, 0.06);
+      border-radius: 30px;
+      font-size: 0.8rem;
+    }
+    .ecorpo .promesa {
+      margin: 6px 0 0;
+      font-size: 0.8rem;
+      color: var(--suave);
+      font-style: italic;
+    }
+    .daycard {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin: 16px 0;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .daycard .dhead {
+      background: linear-gradient(135deg, var(--mar), var(--tq));
+      color: #fff;
+      padding: 14px 18px;
+      font-weight: 600;
+    }
+    .daycard .dhead b {
+      font-size: 1rem;
+    }
+    .daycard .dhead span {
+      display: block;
+      font-size: 0.7rem;
+      opacity: 0.85;
+      margin-top: 2px;
+      font-weight: 400;
+    }
+    .song {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 12px 18px;
+      border-top: 1px dashed var(--borde);
+    }
+    .song .stxt {
+      flex: 1;
+      font-size: 0.88rem;
+    }
+    .song .stxt b {
+      color: var(--mar);
+    }
+    .song .why {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--suave);
+      margin-top: 3px;
+    }
+    .note2 {
+      background: rgba(192, 138, 45, 0.08);
+      border-left: 5px solid var(--ocre);
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-size: 0.85rem;
+      margin: 16px 0;
+    }
+    details.blk {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin: 12px 0;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    details.blk>summary {
+      padding: 14px 18px;
+      cursor: pointer;
+      list-style: none;
+      font-weight: 700;
+      color: var(--mar);
+      font-size: 0.95rem;
+    }
+    details.blk>summary::-webkit-details-marker {
+      display: none;
+    }
+    details.blk .meta {
+      font-weight: 400;
+      font-size: 0.7rem;
+      color: var(--suave);
+      display: block;
+      margin-top: 2px;
+    }
+    .pista {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-top: 1px dashed var(--borde);
+      font-size: 0.85rem;
+      transition: background var(--transition);
+    }
+    .pista .pt {
+      flex: 1;
+    }
+    .pista .dur {
+      font-size: 0.7rem;
+      color: var(--suave);
+      white-space: nowrap;
+    }
+    .pista.playing {
+      background: rgba(192, 138, 45, 0.10);
+      border-left: 4px solid var(--ocre);
+    }
+    .pista.caixa .pt {
+      color: var(--terra);
+    }
+    .nowcard {
+      background: linear-gradient(135deg, var(--mar), var(--tq));
+      color: #fff;
+      border-radius: var(--radius);
+      margin: 12px 0;
+      padding: 16px 20px;
+    }
+    .nowcard .nb {
+      font-size: 0.7rem;
+      opacity: 0.8;
+      letter-spacing: 0.05em;
+    }
+    .nowcard .nt {
+      font-weight: 700;
+      font-size: 1rem;
+      margin: 4px 0 8px;
+    }
+    .letra {
+      background: var(--card);
+      border-radius: var(--radius);
+      margin: 12px 0;
+      padding: 16px 18px;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      max-height: 220px;
+      overflow-y: auto;
+      box-shadow: var(--shadow);
+    }
+    .letra .fr {
+      border-radius: 6px;
+      padding: 2px 4px;
+      transition: background var(--transition);
+    }
+    .letra .fr.on {
+      background: rgba(192, 138, 45, 0.25);
+    }
+    .letra .fr.done {
+      color: var(--suave);
+    }
+    label.rate {
+      font-size: 0.85rem;
+      color: var(--suave);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    input[type=range] {
+      flex: 1;
+      accent-color: var(--tq);
+      height: 4px;
+    }
+    .chain {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: var(--suave);
+      margin-top: 10px;
+    }
+    .chain input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--tq);
+    }
+    #vozbar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 72px;
+      background: var(--mar);
+      color: #fff;
+      padding: 10px 16px;
+      z-index: 150;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+      display: none;
+      backdrop-filter: blur(8px);
+      border-radius: 20px 20px 0 0;
+      max-width: 600px;
+      margin: 0 auto;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96%;
+    }
+    #vozbar.show {
+      display: block;
+    }
+    #vozbar .row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    #vozbar .row button {
+      background: rgba(255, 255, 255, 0.10);
+      border: none;
+      color: #fff;
+      border-radius: 40px;
+      padding: 10px 14px;
+      font-size: 1rem;
+      cursor: pointer;
+      min-width: 44px;
+      transition: background var(--transition);
+    }
+    #vozbar .row button:hover {
+      background: rgba(255, 255, 255, 0.20);
+    }
+    #vozbar .row button.big {
+      background: var(--tq);
+      font-size: 1.2rem;
+      padding: 10px 18px;
+    }
+    #vozbar .info {
+      font-size: 0.7rem;
+      opacity: 0.85;
+      text-align: center;
+      margin-top: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #sos {
+      position: fixed;
+      right: 18px;
+      bottom: 140px;
+      z-index: 90;
+      background: var(--terra);
+      color: #fff;
+      border: none;
+      border-radius: 60px;
+      width: 56px;
+      height: 56px;
+      font-size: 1.4rem;
+      box-shadow: 0 6px 24px rgba(182, 90, 60, 0.3);
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #sos:hover {
+      transform: scale(1.05);
+    }
+    #emg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    #emg.on {
+      display: flex;
+    }
+    #emg .box {
+      background: var(--card);
+      color: var(--tinta);
+      border-radius: var(--radius);
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    }
+    #emg .box h3 {
+      margin-top: 0;
+      color: var(--terra);
+    }
+    #emg .btn.big {
+      display: flex;
+      justify-content: center;
+      margin: 12px 0;
+    }
+    #print-area {
+      display: none;
+    }
+    .map-wrapper {
+      background: var(--borde);
+      border-radius: 28px;
+      padding: 0.8rem;
+      margin: 1.5rem 0 2rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    }
+    .map-container {
+      height: 340px;
+      width: 100%;
+      border-radius: 20px;
+      background: var(--borde);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 2rem;
+      margin: 2rem 0 2.5rem;
+    }
+    .grid .card {
+      border-left: 6px solid var(--borde);
+    }
+    .grid .card .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .grid .card h3 {
+      font-size: 1.4rem;
+      margin: 0;
+    }
+    .grid .card .stars {
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      color: #c99f7a;
+      white-space: nowrap;
+    }
+    .grid .card .tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--borde);
+      padding: 0.15rem 0.8rem;
+      border-radius: 40px;
+      margin: 0.3rem 0 0.6rem;
+      color: var(--suave);
+      font-weight: 500;
+    }
+    .grid .card p {
+      font-size: 0.95rem;
+      margin: 0.5rem 0 0.8rem;
+      flex: 1;
+    }
+    .grid .card .meta {
+      font-size: 0.85rem;
+      color: var(--suave);
+      border-top: 1px solid var(--borde);
+      padding-top: 0.8rem;
+      margin-top: 0.4rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem 1.2rem;
+    }
+    .grid .card .meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .grid .card .micro {
+      background: var(--borde);
+      border-radius: 30px;
+      padding: 0.2rem 1rem;
+      font-size: 0.8rem;
+      display: inline-block;
+      margin-top: 0.4rem;
+      color: var(--suave);
+    }
+    .grid .card .curio {
+      background: rgba(44, 143, 135, 0.06);
+      padding: 0.8rem 1rem;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      margin: 0.8rem 0 0.2rem;
+      border-left: 4px solid #c99f7a;
+    }
+    .grid .card .curio strong {
+      font-weight: 600;
+      color: var(--mar);
+    }
+    .grid .card .checkbox-wrap {
+      margin-top: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .grid .card .checkbox-wrap input[type=checkbox] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--tq);
+      cursor: pointer;
+    }
+    .grid .card .checkbox-wrap label {
+      font-size: 0.8rem;
+      color: var(--suave);
+      cursor: pointer;
+    }
+    .special-box {
+      background: var(--borde);
+      border-radius: 24px;
+      padding: 1.8rem 2rem;
+      margin: 2rem 0 1.8rem;
+      border-left: 8px solid var(--mar);
+    }
+    .special-box h4 {
+      font-size: 1.5rem;
+      color: var(--mar);
+      margin-bottom: 0.5rem;
+    }
+    .special-box strong {
+      color: var(--mar);
+    }
+    .special-box ul {
+      list-style: none;
+      padding-left: 0.5rem;
+    }
+    .special-box li {
+      padding: 0.3rem 0 0.3rem 1.8rem;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%2316456e" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>') left center no-repeat;
+      background-size: 1.2rem;
+    }
+    body.modo-camino .special-box li {
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%236B5344" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>');
+    }
+    .route-box {
+      background: var(--borde);
+      border-radius: 20px;
+      padding: 1.5rem 2rem;
+      margin-top: 1.5rem;
+    }
+    .route-box p {
+      font-size: 1rem;
+      color: var(--tinta);
+    }
+    .btn-route {
+      display: inline-block;
+      background: var(--mar);
+      color: #fff;
+      font-family: inherit;
+      font-size: 1.1rem;
+      padding: 0.8rem 2rem;
+      border-radius: 60px;
+      text-decoration: none;
+      margin: 1rem 0 0.5rem;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .btn-route:hover {
+      background: var(--tq);
+    }
+    .footer {
+      text-align: center;
+      margin-top: 4rem;
+      border-top: 1px solid var(--borde);
+      padding-top: 2rem;
+      font-size: 0.9rem;
+      color: var(--suave);
+    }
+
+    /* RESPONSIVE */
+    @media (max-width:700px) {
+      body {
+        padding: 0 0 80px;
+      }
+      #menu-inicial h1 {
+        font-size: 2rem;
+      }
+      .menu-card {
+        flex: 1 1 200px;
+        padding: 1.8rem 1.2rem;
+      }
+      .menu-card .icon {
+        font-size: 2.8rem;
+      }
+      .menu-card .nome {
+        font-size: 1.3rem;
+      }
+      header h1 {
+        font-size: 1rem;
+      }
+      header h1 .volver {
+        font-size: 0.6rem;
+        padding: 2px 10px;
+      }
+      .chips {
+        top: 100px;
+      }
+      .btn {
+        font-size: 0.75rem;
+        padding: 6px 12px;
+      }
+      .stop {
+        padding: 10px 14px;
+        gap: 10px;
+      }
+      .stop .stxt {
+        font-size: 0.82rem;
+      }
+      nav.tabs button {
+        font-size: 0.65rem;
+      }
+      nav.tabs button i {
+        font-size: 1rem;
+      }
+      #vozbar {
+        bottom: 68px;
+        width: 98%;
+      }
+      #sos {
+        width: 48px;
+        height: 48px;
+        font-size: 1.2rem;
+        bottom: 130px;
+        right: 12px;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .special-box {
+        padding: 1.2rem;
+      }
+      .route-box {
+        padding: 1rem;
+      }
+    }
+    @media (max-width:450px) {
+      #menu-inicial h1 {
+        font-size: 1.6rem;
+      }
+      .menu-card .icon {
+        font-size: 2.2rem;
+      }
+      .menu-card .nome {
+        font-size: 1.1rem;
+      }
+    }
+    @media print {
+      body>*:not(#print-area) {
+        display: none !important;
+      }
+      #print-area {
+        display: block !important;
+        background: #fff;
+        color: #000;
+        padding: 8mm;
+      }
+      #print-area .btn,
+      #print-area textarea,
+      #print-area input,
+      #print-area .badge {
+        display: none !important;
+      }
+      #print-area details {
+        display: block !important;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+  MENÚ INICIAL
+  ============================================================ -->
+  <div id="menu-inicial">
+  <h1>🚐 VIAXE EN FURGO</h1>
+  <div class="sub">Elige o teu destino</div>
+  <div class="menu-grid">
+    <!-- O CAMIÑO (primeiro) -->
+    <div class="menu-card camino" data-app="camino">
+      <div class="icon">🏔️</div>
+      <div class="nome">O CAMIÑO</div>
+      <div class="desc">Zaragoza · Pirineos · Costa Brava · 5 días</div>
+      <span class="badge">Viaxe de aproximación</span>
+    </div>
+    <!-- A ILLA (segundo) -->
+    <div class="menu-card illa" data-app="sardena">
+      <div class="icon">🌊</div>
+      <div class="nome">A ILLA</div>
+      <div class="desc">Sardeña · 7 días · Nuraghes · Mar · Románico</div>
+      <span class="badge">28 ago – 4 set 2026</span>
+    </div>
+  </div>
+  <div style="margin-top:3rem;font-size:0.8rem;opacity:0.5;">Toca unha opción para comezar</div>
+</div>
+
+  <!-- ============================================================
+  APP SARDENA
+  ============================================================ -->
+  <div class="app-container" id="app-sardena">
+    <header>
+      <div class="top">
+        <div>
+          <h1><i class="fas fa-map-signs" style="margin-right:6px;"></i>SARDEGNAPP <span class="volver" id="volver-sardena"><i class="fas fa-arrow-left"></i> Menú</span></h1>
+          <div class="sub">28 ago – 4 set 2026 · Vito &lt;1,80 m · funciona offline</div>
+        </div>
+        <button class="hbtn" id="dark-sardena"><i class="fas fa-moon"></i></button>
+      </div>
+      <div class="prog">Progreso da viaxe: <b>✓ <span id="pc-s">0</span>/<span id="pt-s">0</span></b> lugares visitados</div>
+    </header>
+
+    <nav class="tabs" id="tabs-sardena">
+      <button class="on" data-tab="t-ruta-s"><i class="fas fa-map"></i><span>RUTA</span></button>
+      <button data-tab="t-crono-s"><i class="fas fa-history"></i><span>CRONO</span></button>
+      <button data-tab="t-musica-s"><i class="fas fa-music"></i><span>MÚSICA</span></button>
+      <button data-tab="t-voz-s"><i class="fas fa-book-reader"></i><span>LIBRO</span></button>
+      <button data-tab="t-reservas-s"><i class="fas fa-ticket-alt"></i><span>RESERVAS</span></button>
+      <button data-tab="t-normas-s"><i class="fas fa-gavel"></i><span>NORMAS</span></button>
+      <button data-tab="t-vento-s"><i class="fas fa-wind"></i><span>VENTO</span></button>
+    </nav>
+
+    <!-- RUTA SARDENA -->
+    <section class="tab on" id="t-ruta-s">
+      <input id="q-s" placeholder="🔎 Buscar: auga, fainé, QR, vento, UNESCO…">
+      <div id="qinfo-s">Escribe para filtrar días e resaltar coincidencias.</div>
+      <div id="hoxe-s"></div>
+      <div class="chips" id="chips-s">
+        <button data-goto="d1-s">D1</button><button data-goto="d2-s">D2</button>
+        <button data-goto="d3-s">D3</button><button data-goto="d4-s">D4</button>
+        <button data-goto="d5-s">D5</button><button data-goto="d6-s">D6</button>
+        <button data-goto="d7-s">D7</button><button data-goto="d8-s">D8</button>
+      </div>
+
+      <!-- DÍA 1 -->
+      <details class="day" id="d1-s">
+        <summary><span>DÍA 1 · ven 28 ago</span><span class="km">68 km · 1h15 (+4 Accoddi)</span></summary>
+        <div class="stop"><input type="checkbox" data-done="s_d1s1"><div class="stxt"><b>Porto Torres</b> · chegada, sen visita<span class="note">Desembarco amodo. A cidade gárdase para o Día 7.</span></div><div class="acts"><a class="btn map" data-q="Porto di Porto Torres"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.8361,8.2964"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d1s2"><div class="stxt"><b>Monte d'Accoddi</b> · opcional · 45 min–1 h<span class="note">Só se o ferry chega antes das 9:30; senón, Día 7. Sen sombra.</span></div><div class="acts"><a class="btn map" data-q="Monte d'Accoddi, Sassari"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.7950,8.5300"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d1s3"><div class="stxt"><b>Nuraghe Santu Antine</b> · 2 h<span class="note">Antes das 11:00 ou despois das 15:30 (pausa meridiana).</span></div><div class="acts"><a class="btn map" data-q="Nuraghe Santu Antine, Torralba"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.5336,8.7721"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d1s4"><div class="stxt"><b>Roccia dell'Elefante</b> · 30 min · libre<span class="note">Domus de janas dentro da rocha · UNESCO 2025.</span></div><div class="acts"><a class="btn map" data-q="Roccia dell'Elefante, Castelsardo"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.8783,8.7452"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d1s5"><div class="stxt"><b>Castelsardo</b> · 2 h<span class="note">Castelo, cesteiras, catedral. Con calor, a partir das 19:00.</span></div><div class="acts"><a class="btn map" data-q="Castelsardo"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.9116,8.7104"><i class="fas fa-location-arrow"></i></a></div></div>
+        <details class="curio"><summary><i class="fas fa-book-open" style="margin-right:8px;"></i>Historia e curiosidades</summary><ul>
+          <li>Monte d'Accoddi <b>non é un nuraghe</b>: é mil anos anterior. Santuario escalonado do IV–III milenio a.C., rampla de 25 m. O primeiro santuario estivo cuberto de ocre vermello: o «templo vermello».</li>
+          <li>Santu Antine: torre &gt;17 m. <b>Acústica máxica da tholos</b>: un susurro nun extremo escoítase claro no oposto.</li>
+          <li>Os nuráxicos exportaban lingotes de cobre en pel de boi a Chipre, Creta e Turquía.</li>
+          <li>Castelsardo: as guías antigas din fundada en <b>1102</b>; a historiografía actual sitúaa a <b>finais do s. XIII</b>.</li>
+        </ul></details>
+        <div class="blk"><h4>Plans B</h4><ul><li>Ferry atrasado → Accoddi ao Día 7.</li><li>Calor → Castelsardo ao serán.</li></ul></div>
+        <div class="blk"><h4>Se se come fóra · 18–25 €</h4>Bivalvos do golfo da Asinara: <i>spaghetti con arselle e bottarga</i> ou sauté de cozze e vongole.</div>
+        <div class="blk"><h4>Pernocta</h4>A · área camper Valledoria || B · Lu Bagnu (barreira 2,00 m: a Vito pasa).<br>P4N: «area camper Valledoria» / «parcheggio Lu Bagnu».</div>
+        <div class="blk"><h4>Notas do día</h4><textarea data-note="s_d1" placeholder="Que fixemos, que descartamos, a frase do día…"></textarea></div>
+        <div class="blk acts"><button class="btn print" data-print="s_d1"><i class="fas fa-print"></i> Imprimir</button><a class="btn ruta" data-dir="Porto di Porto Torres|Monte d'Accoddi, Sassari|Nuraghe Santu Antine, Torralba|Roccia dell'Elefante, Castelsardo|Castelsardo"><i class="fas fa-route"></i> Ruta do día</a></div>
+      </details>
+
+      <!-- DÍA 2 -->
+      <details class="day" id="d2-s">
+        <summary><span>DÍA 2 · sáb 29 ago</span><span class="km">75 km · 1h30</span></summary>
+        <div class="stop"><input type="checkbox" data-done="s_d2s1"><div class="stxt"><b>Tomba dei Giganti · Coddu Vecchiu</b> · 1h30<span class="note">Ás 09:30 (abertura); pecha ao mediodía.</span></div><div class="acts"><a class="btn map" data-q="Tomba dei Giganti Coddu Vecchiu, Arzachena"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.0808,9.3414"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d2s2"><div class="stxt"><b>Capriccioli</b> · baño + sombra<span class="note">Se mestral forte → calas a sotavento (leste).</span></div><div class="acts"><a class="btn map" data-q="Capriccioli, Arzachena"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.0474,9.5420"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d2s3"><div class="stxt"><b>Porto Cervo</b> · opcional (+10 km)<span class="note">Paseo breve. A vida real segue no porto.</span></div><div class="acts"><a class="btn map" data-q="Porto Cervo"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.1358,9.5483"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d2s4"><div class="stxt"><b>Capo d'Orso</b> · opcional<span class="note">A rocha-oso que Ptolomeo citou no s. II como baliza.</span></div><div class="acts"><a class="btn map" data-q="Capo d'Orso, Palau"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.1733,9.4064"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d2s5"><div class="stxt"><b>Palau</b> · porto + pernocta estratéxica<span class="note">Preto do ferry de mañá. Mestral: personaxe do día.</span></div><div class="acts"><a class="btn map" data-q="Palau, Sardegna"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.1798,9.3824"><i class="fas fa-location-arrow"></i></a></div></div>
+        <details class="curio"><summary><i class="fas fa-book-open" style="margin-right:8px;"></i>Historia e curiosidades</summary><ul>
+          <li>Coddu Vecchiu (s. XV–XIII a.C.): estela &gt;4 m nun só bloque de granito. Na base, un <b>pequeno burato</b>: porta simbólica para ofrendas.</li>
+          <li>Costa Smeralda chamábase <b>Monti di Mola</b> ata 1962, cando Aga Khan IV creou o Consorcio.</li>
+          <li>O verde esmeralda de Capriccioli é <b>física</b>: luz reflectida na area branca sobre fondo granítico.</li>
+        </ul></details>
+        <div class="blk"><h4>Plans B</h4><ul><li>Mestral → Capriccioli sur / Porto Paglia.</li><li>Peche meridiano → praia primeiro, tumba despois das 15:30.</li></ul></div>
+        <div class="blk"><h4>Se se come fóra · 12–18 €</h4><i>Suppa cuata</i> (zuppa gallurese) en Arzachena. Pedir vexetariana expresamente [CB].</div>
+        <div class="blk"><h4>Pernocta (ESTRATÉXICA)</h4>A · área camper Palau || B · agricampeggio en Arzachena / parking tolerado preto do porto.<br>P4N: «area camper Palau porto» / «agricampeggio Arzachena».</div>
+        <div class="blk"><h4>Notas do día</h4><textarea data-note="s_d2" placeholder="Que fixemos, que descartamos, a frase do día…"></textarea></div>
+        <div class="blk acts"><button class="btn print" data-print="s_d2"><i class="fas fa-print"></i> Imprimir</button><a class="btn ruta" data-dir="Castelsardo|Tomba dei Giganti Coddu Vecchiu, Arzachena|Capriccioli, Arzachena|Palau, Sardegna"><i class="fas fa-route"></i> Ruta do día</a></div>
+      </details>
+
+      <!-- DÍA 3 -->
+      <details class="day" id="d3-s">
+        <summary><span>DÍA 3 · dom 30 ago</span><span class="km">45 km + ferry (15–20 min)</span></summary>
+        <div class="stop"><input type="checkbox" data-done="s_d3s1"><div class="stxt"><b>Ferry Palau → La Maddalena</b><span class="note">Cada 30–45 min · 12–20 € a pé [CB]. Cruzamos A PÉ; a Vito queda en Palau.</span></div><div class="acts"><a class="btn map" data-q="Porto di Palau, traghetti La Maddalena"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.1798,9.3824"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d3s2"><div class="stxt"><b>La Maddalena</b> · centro histórico<span class="note">Vila viva todo o ano: escolas, prazas, mariñeiros.</span></div><div class="acts"><a class="btn map" data-q="La Maddalena"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.2094,9.3881"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d3s3"><div class="stxt"><b>Caprera · Cala Spalmatore</b> · libre<span class="note">Area branca, augas pouco profundas. Casa-museo de Garibaldi preto.</span></div><div class="acts"><a class="btn map" data-q="Cala Spalmatore, Caprera"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.2169,9.4117"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d3s4"><div class="stxt"><b>Bassa Trinità</b> · libre<span class="note">Máis aberta e batida polo vento; mesma transparencia.</span></div><div class="acts"><a class="btn map" data-q="Bassa Trinità, La Maddalena"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.2517,9.3983"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d3s5"><div class="stxt"><b>⚠️ Cala Coticcio</b> · SÓ con guía<span class="note">Acceso por sendeiro NON libre en 2026. Multas elevadas.</span></div><div class="acts"><a class="btn map" data-q="Cala Coticcio, Caprera"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.2236,9.4153"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d3s6"><div class="stxt"><b>Capo Testa</b> · solpor (20:00)<span class="note">Labirinto de granito + faro · vistas de Córcega.</span></div><div class="acts"><a class="btn map" data-q="Capo Testa, Santa Teresa Gallura"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.2569,9.1542"><i class="fas fa-location-arrow"></i></a></div></div>
+        <details class="curio"><summary><i class="fas fa-book-open" style="margin-right:8px;"></i>Historia e curiosidades</summary><ul>
+          <li>Estreito de Bonifacio: só <b>12 km</b> entre Sardeña e Córcega. Porta do Mediterráneo occidental desde hai milenios.</li>
+          <li><b>Garibaldi</b> rematou os seus días en Caprera (morreu en 1882): escolleu granito e vento.</li>
+          <li>A <b>posidonia non é unha alga</b>: é unha planta con flores e raíces. As follas na beira protexen a praia da erosión.</li>
+        </ul></details>
+        <div class="blk"><h4>Plans B</h4><ul><li>Mar pechado → trocar Día 3 ↔ Día 4.</li><li>Coticcio chea/pechada → Spalmatore ou Bassa Trinità.</li></ul></div>
+        <div class="blk"><h4>Se se come fóra · 20–28 €</h4>Spaghetti con arselle ou navallas á brasa + fregola, en Santa Teresa Gallura.</div>
+        <div class="blk"><h4>Pernocta</h4>A · camping Santa Teresa/Palau || B · agricampeggio nas colinas de Santa Teresa.<br>P4N: «area camper Santa Teresa Gallura».</div>
+        <div class="blk"><h4>Notas do día</h4><textarea data-note="s_d3" placeholder="Que fixemos, que descartamos, a frase do día…"></textarea></div>
+        <div class="blk acts"><button class="btn print" data-print="s_d3"><i class="fas fa-print"></i> Imprimir</button><a class="btn ruta" data-dir="Palau, Sardegna|La Maddalena|Caprera|Capo Testa, Santa Teresa Gallura"><i class="fas fa-route"></i> Ruta do día</a></div>
+      </details>
+
+      <!-- DÍA 4 -->
+      <details class="day" id="d4-s">
+        <summary><span>DÍA 4 · lun 31 ago</span><span class="km">110 km · 1h45 (+ext.)</span></summary>
+        <div class="stop"><input type="checkbox" data-done="s_d4s1"><div class="stxt"><b>Tempio Pausania</b> · 2 h ao mediodía<span class="note">Vila de granito, galurés, café con sombra. ⛽ Último punto abundante antes de Sassari.</span></div><div class="acts"><a class="btn map" data-q="Tempio Pausania"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.8969,9.1039"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d4s2"><div class="stxt"><b>Valle della Luna (Aggius)</b> · 1–1h30<span class="note">Bolos xigantes de granito · paisaxe doutro mundo.</span></div><div class="acts"><a class="btn map" data-q="Valle della Luna, Aggius"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.9681,9.0508"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d4s3"><div class="stxt"><b>Nuraghe Izzana</b> · 1 h<span class="note">⚠️ Adoita pechar luns e martes + pausa meridiana [CB].</span></div><div class="acts"><a class="btn map" data-q="Nuraghe Izzana, Tempio Pausania"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.9583,9.0756"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d4s4"><div class="stxt"><b>Santissima Trinità di Saccargia</b> · 45 min<span class="note">Media tarde: luz rasante sobre a pedra bicroma. Pecha luns e martes [CB]. Se non: Día 7.</span></div><div class="acts"><a class="btn map" data-q="Santissima Trinità di Saccargia, Codrongianos"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.6608,8.6842"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d4s5"><div class="stxt"><b>Sassari</b> · fainé + Museo Sanna<span class="note">Plan B de chuvia: Museo Nazionale G. A. Sanna [CB]. Parking con barra 1,90 m: a Vito entra.</span></div><div class="acts"><a class="btn map" data-q="Sassari"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.7234,8.5589"><i class="fas fa-location-arrow"></i></a></div></div>
+        <details class="curio"><summary><i class="fas fa-book-open" style="margin-right:8px;"></i>Historia e curiosidades</summary><ul>
+          <li>Tempio: capital do <b>granito e do galurés</b>. Catedral erguida coa mesma pedra do monte Limbara.</li>
+          <li>Izzana: nuraghe de granito, a pedra máis difícil. <b>Nodo dunha rede visual de vixianza</b> entre nuraghes.</li>
+          <li>Saccargia, consagrada en <b>1116</b>: calcaria branca + basalto negro, románico pisano.</li>
+          <li><b>A lenda do touro</b>: un touro axeonllouse espontaneamente neste punto; <i>S'acca arghia</i> (a vaca branca) derivaría en Saccargia.</li>
+        </ul></details>
+        <div class="blk"><h4>Plans B</h4><ul><li>Chuvia → Museo Sanna (Sassari).</li><li>Cansazo → saltar Saccargia (pasa ao Día 7) e ir directos a Alghero.</li></ul></div>
+        <div class="blk"><h4>Se se come fóra · 10–15 €</h4><i>Fainé</i> con cipolle (sen salsiccia para mante-la opción vexetariana) + culurgiones. Fainetterias do centro de Sassari [CB].</div>
+        <div class="blk"><h4>Pernocta</h4>A · área camper Fertilia/Maristella || B · agricampeggio na Nurra (Olmedo).<br>P4N: «area camper Alghero Fertilia» / «agricampeggio Olmedo».</div>
+        <div class="blk"><h4>Notas do día</h4><textarea data-note="s_d4" placeholder="Que fixemos, que descartamos, a frase do día…"></textarea></div>
+        <div class="blk acts"><button class="btn print" data-print="s_d4"><i class="fas fa-print"></i> Imprimir</button><a class="btn ruta" data-dir="Santa Teresa Gallura|Tempio Pausania|Valle della Luna, Aggius|Santissima Trinità di Saccargia, Codrongianos|Alghero"><i class="fas fa-route"></i> Ruta do día</a></div>
+      </details>
+
+      <!-- DÍA 5 -->
+      <details class="day" id="d5-s">
+        <summary><span>DÍA 5 · mar 1 set</span><span class="km">25 km (+110 Priu opc.)</span></summary>
+        <div class="stop"><input type="checkbox" data-done="s_d5s1"><div class="stxt"><b>Necrópole de Anghelu Ruju</b> · 1h30 · UNESCO<span class="note">Ás 09:00 absolutas: non ten sombra. 38 domus de janas.</span></div><div class="acts"><a class="btn map" data-q="Necropoli di Anghelu Ruju, Alghero"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.6231,8.3653"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d5s2"><div class="stxt"><b>L'Alguer · casco histórico</b> · 2–3 h<span class="note">Mercado ao mediodía; murallas e Torre Sulis ao serán. Vito fóra das murallas (barra 1,80 m).</span></div><div class="acts"><a class="btn map" data-q="Alghero centro storico"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.5587,8.3167"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d5s3"><div class="stxt"><b>Nuraghe Palmavera</b> · opción · 1 h<span class="note">A cara cotiá da civilización nuráxica; pedra clara.</span></div><div class="acts"><a class="btn map" data-q="Nuraghe Palmavera, Alghero"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.5936,8.2967"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d5s4"><div class="stxt"><b>Sant'Andrea Priu</b> · só se o día dá<span class="note">+110 km i/v · palimpsesto neolítico-bizantino. Alternativa: praia de Maria Pia.</span></div><div class="acts"><a class="btn map" data-q="Necropoli di Sant'Andrea Priu, Bonorva"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.4244,8.8211"><i class="fas fa-location-arrow"></i></a></div></div>
+        <details class="curio"><summary><i class="fas fa-book-open" style="margin-right:8px;"></i>Historia e curiosidades</summary><ul>
+          <li>Anghelu Ruju descubriuse <b>en 1903 por accidente</b>. 38 hipoxeos da cultura de Ozieri (<b>3200–2700 a.C.</b>): mil anos máis antigos ca Santu Antine.</li>
+          <li>As cámaras imitan vivendas: <b>falsas portas, vigas e columnas</b> esculpidas.</li>
+          <li>O <b>ocre vermello</b> cubría os enterramentos: o vermello lembra o sangue, e o sangue é vida.</li>
+          <li>«Domus de janas» = <b>casas das fadas</b>. Patrimonio Mundial UNESCO desde 2025.</li>
+          <li>Alghero: en <b>1354</b> a Coroa de Aragón conquistou a cidade. O catalán foi a lingua urbana; hoxe vive o <b>alguerés</b>.</li>
+        </ul></details>
+        <div class="blk"><h4>Plans B</h4><ul><li>Calor → mercado cuberto e sombra dos baluartes ao mediodía.</li><li>Corpo esgotado → prescindir de Priu e Palmavera.</li></ul></div>
+        <div class="blk"><h4>Se se come fóra · 20–30 €</h4>Améxoas e mexillóns do Calich á sartén, fritura de rocha ou paella algherese. Trattoria pequena das rúas interiores [CB].</div>
+        <div class="blk"><h4>Pernocta</h4>A · Fertilia–Maristella || B · Maria Pia (piñeirais, 15 min a pé das murallas) / Nurra.<br>P4N: «area camper Alghero Fertilia» / «parcheggio camper Alghero Maria Pia».</div>
+        <div class="blk"><h4>Notas do día</h4><textarea data-note="s_d5" placeholder="Que fixemos, que descartamos, a frase do día…"></textarea></div>
+        <div class="blk acts"><button class="btn print" data-print="s_d5"><i class="fas fa-print"></i> Imprimir</button><a class="btn ruta" data-dir="Fertilia, Alghero|Necropoli di Anghelu Ruju, Alghero|Alghero centro storico|Nuraghe Palmavera, Alghero"><i class="fas fa-route"></i> Ruta do día</a></div>
+      </details>
+
+      <!-- DÍA 6 -->
+      <details class="day" id="d6-s">
+        <summary><span>DÍA 6 · mér 2 set</span><span class="km">~100 km · ~2h15</span></summary>
+        <div class="stop"><input type="checkbox" data-done="s_d6s1"><div class="stxt"><b>Capo Caccia</b> · cantís 180 m<span class="note">Miradoiros da SP55. A Vito colase onde as autocaravanas non caben.</span></div><div class="acts"><a class="btn map" data-q="Capo Caccia, Alghero"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.5678,8.1661"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d6s2"><div class="stxt"><b>Grotta di Nettuno</b> · ~3 h · ás 10:00<span class="note">654 chanzos (Escala do Cabirol) ou barco desde Alghero. Entrada con antelación recomendada.</span></div><div class="acts"><a class="btn map" data-q="Grotta di Nettuno, Alghero"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.5672,8.1656"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d6s3"><div class="stxt"><b>La Pelosa ⚠️ QR OBRIGATORIO</b> · 18:30<span class="note">3,50 € · esterilla propia · non fumar · pés enxutos. Sen QR non se entra.</span></div><div class="acts"><a class="btn map" data-q="Spiaggia La Pelosa, Stintino"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.9931,8.2025"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d6s4"><div class="stxt"><b>Cala Lupo</b> · Plan B<span class="note">Transparente, libre, sen reserva.</span></div><div class="acts"><a class="btn map" data-q="Cala Lupo, Stintino"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.9872,8.1947"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d6s5"><div class="stxt"><b>Capo Falcone</b> · miradoiro<span class="note">A mellor vista da Pelosa, a torre e a Asinara.</span></div><div class="acts"><a class="btn map" data-q="Capo Falcone, Stintino"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="41.0017,8.1969"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d6s6"><div class="stxt"><b>Stintino</b> · porto pesqueiro<span class="note">Patria da bottarga di muggine.</span></div><div class="acts"><a class="btn map" data-q="Stintino"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.9375,8.2281"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d6s7"><div class="stxt"><b>→ Porto Torres</b> · pernocta estratéxica<span class="note">Ferry ás 06:00 de mañá: durmir a poucos minutos da rampla.</span></div><div class="acts"><a class="btn map" data-q="Porto Torres"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.8361,8.2964"><i class="fas fa-location-arrow"></i></a></div></div>
+        <details class="curio"><summary><i class="fas fa-book-open" style="margin-right:8px;"></i>Historia e curiosidades</summary><ul>
+          <li>Capo Caccia era, hai <b>150 millóns de anos</b> (Cretácico), o fondo dun mar cálido. A tectónica empuxouno ao ceo; a choiva baleirouno por dentro: así nace o <b>karst</b>.</li>
+          <li>A cova é un <b>ecosistema vivo</b>: especies troglomórficas (cegas, sen pigmentación) que levan millóns de anos na escuridade.</li>
+          <li>A química da cova: <b>un centímetro por século</b>. Tocalas detén o proceso: mans nos petos.</li>
+          <li>A Pelosa: 1.500 prazas/día entre o 15/5 e o 15/10. A Torre Aragonesa é do <b>s. XVI</b>. Sacar area é delito con multas de miles de €.</li>
+        </ul></details>
+        <div class="blk"><h4>Plans B</h4><ul><li>Sen QR → Cala Lupo + Capo Falcone.</li><li>Cova pechada por mar brava → miradoiros de Capo Caccia + Cala Dragunara.</li><li>Sen pernas para 654 chanzos de subida → barco desde Alghero pola mañá.</li></ul></div>
+        <div class="blk"><h4>Se se come fóra · 20–28 €</h4>Spaghetti alla bottarga ou zuppa di pesce. Trattoria no porto pesqueiro de Stintino [CB].</div>
+        <div class="blk"><h4>Pernocta (CRÍTICA)</h4>A · área camper Porto Torres || B · parking urbano tolerado preto do porto.<br>P4N: «area camper Porto Torres porto» / «parcheggio Porto Torres traghetto».</div>
+        <div class="blk"><h4>Notas do día</h4><textarea data-note="s_d6" placeholder="Que fixemos, que descartamos, a frase do día…"></textarea></div>
+        <div class="blk acts"><button class="btn print" data-print="s_d6"><i class="fas fa-print"></i> Imprimir</button><a class="btn ruta" data-dir="Alghero|Capo Caccia, Alghero|Grotta di Nettuno, Alghero|Spiaggia La Pelosa, Stintino|Porto Torres"><i class="fas fa-route"></i> Ruta do día</a></div>
+      </details>
+
+      <!-- DÍA 7 -->
+      <details class="day" id="d7-s">
+        <summary><span>DÍA 7 · xov 3 set</span><span class="km">25 km (+30/70 pendentes)</span></summary>
+        <div class="stop"><input type="checkbox" data-done="s_d7s1"><div class="stxt"><b>Mañá libre / pendentes</b><span class="note">Accoddi ou Saccargia se quedaron pendentes; senón, Abbacurrente ou banco + caderno.</span></div><div class="acts"><a class="btn map" data-q="Monte d'Accoddi, Sassari"><i class="fas fa-map-pin"></i> Accoddi</a><a class="btn map" data-q="Santissima Trinità di Saccargia, Codrongianos"><i class="fas fa-map-pin"></i> Saccargia</a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d7s2"><div class="stxt"><b>Basílica de San Gavino</b><span class="note">Románico sereno · praia de Balai preto.</span></div><div class="acts"><a class="btn map" data-q="Basilica di San Gavino, Porto Torres"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.8403,8.2961"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d7s3"><div class="stxt"><b>Ponte Romano (Rio Mannu)</b><span class="note">S. I d.C. · sete arcos orixinais · segue salvando o río.</span></div><div class="acts"><a class="btn map" data-q="Ponte Romano, Porto Torres"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.8383,8.2917"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d7s4"><div class="stxt"><b>Parque Turris Libisonis + Antiquarium</b><span class="note">Termas, mosaicos, rúas da colonia romana. Pausa meridiana [CB].</span></div><div class="acts"><a class="btn map" data-q="Parco Archeologico Turris Libisonis, Porto Torres"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.8369,8.2994"><i class="fas fa-location-arrow"></i></a></div></div>
+        <div class="stop"><input type="checkbox" data-done="s_d7s5"><div class="stxt"><b>Porto Torres · cea de despedida</b><span class="note">Paseo polo porto ao serán. Último licor de mirto.</span></div><div class="acts"><a class="btn map" data-q="Porto Torres"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.8361,8.2964"><i class="fas fa-location-arrow"></i></a></div></div>
+        <details class="curio"><summary><i class="fas fa-book-open" style="margin-right:8px;"></i>Historia e curiosidades</summary><ul>
+          <li>San Gavino (finais s. XI–comezos s. XII), símbolo do <b>Xulgado de Torres</b>: detalle único en Europa: <b>dúas ábsidas opostas</b>.</li>
+          <li>Ponte Romana, época xulio-claudia (<b>s. I d.C.</b>): sete arcos orixinais.</li>
+          <li>A colonia <b>Iulia Turris Libisonis</b> atribúese ao <b>46 a.C.</b> (Xulio César), con debate historiográfico.</li>
+        </ul></details>
+        <div class="blk"><h4>Plans B</h4><ul><li>Museo pechado → praia de Balai coa basílica ao fondo.</li><li>Chuvia → Antiquarium + paseo cuberto polo porto.</li><li>Cansazo → mañá de banco e caderno.</li></ul></div>
+        <div class="blk"><h4>Cea de despedida · 20–25 €</h4>Fregola con arselle ou zuppa di pesce turritana. Trattoria pequena preto do porto coa carta a man [CB].</div>
+        <div class="blk"><h4>Pernocta · NON NEGOCIABLE</h4>Preto da rampla. Antes de durmir: combustible, auga, baleirar depósitos, billetes á man.</div>
+        <div class="blk"><h4>Notas do día</h4><textarea data-note="s_d7" placeholder="Que fixemos, que descartamos, a frase do día…"></textarea></div>
+        <div class="blk acts"><button class="btn print" data-print="s_d7"><i class="fas fa-print"></i> Imprimir</button><a class="btn ruta" data-dir="Stintino|Monte d'Accoddi, Sassari|Basilica di San Gavino, Porto Torres|Porto Torres"><i class="fas fa-route"></i> Ruta do día</a></div>
+      </details>
+
+      <!-- DÍA 8 -->
+      <details class="day" id="d8-s">
+        <summary><span>DÍA 8 · ven 4 set</span><span class="km">saída 06:00</span></summary>
+        <div class="stop"><input type="checkbox" data-done="s_d8s1"><div class="stxt"><b>04:30 espertar · 04:45 embarque · 06:00 ferry</b><span class="note">Check-in de vehículos pecha 30–60 min antes. Compañía: [COMPAÑÍA] → [PORTO]. Vito &lt;1,80 m: pode contar como turismo [CB].</span></div><div class="acts"><a class="btn map" data-q="Porto di Porto Torres, imbarco traghetti"><i class="fas fa-map-pin"></i></a><a class="btn nav" data-co="40.8361,8.2964"><i class="fas fa-location-arrow"></i></a></div></div>
+        <details class="curio"><summary><i class="fas fa-book-open" style="margin-right:8px;"></i>O último café</summary><ul>
+          <li>A regra da casa: «o único marxe que nunca falla é o que se durme preto do barco».</li>
+          <li>Na fila de embarque escoitaranse italiano, sardo, francés, alemán, neerlandés, catalán… e algunha palabra en galego.</li>
+          <li>Unha viaxe non se pecha: déixase aberta.</li>
+        </ul></details>
+        <div class="blk acts"><button class="btn print" data-print="s_d8"><i class="fas fa-print"></i> Imprimir</button></div>
+      </details>
+    </section>
+
+    <!-- CRONOLOXÍA SARDENA -->
+    <section class="tab" id="t-crono-s">
+      <p class="hint"><i class="fas fa-hand-point-up" style="margin-right:6px;"></i>Toca un día da ruta para resaltar as capas históricas que pisades ese día.</p>
+      <div class="chips" id="fchips-s">
+        <button class="on" data-f="all">Todo</button>
+        <button data-f="1">D1</button><button data-f="2">D2</button><button data-f="3">D3</button>
+        <button data-f="4">D4</button><button data-f="5">D5</button><button data-f="6">D6</button>
+        <button data-f="7">D7</button><button data-f="8">D8</button>
+      </div>
+      <details class="era" data-dias="6"><summary><span class="epoca">🌋 Cretácico · o fondo mariño que se fixo montaña</span><span class="fechas">hai ~150 M. anos</span><span class="dias">D6</span></summary>
+        <div class="ecorpo"><p>Os cantís de Capo Caccia eran o fondo dun mar cálido. A tectónica empuxouno ao ceo; a choiva baleirouno por dentro: así nace o karst e a Grotta di Nettuno.</p><p class="ruta">Na ruta: <b>Día 6</b> · Capo Caccia e Grotta di Nettuno.</p></div></details>
+      <details class="era"><summary><span class="epoca">🌍 A deriva do bloque sardo-corso</span><span class="fechas">30–20 M. anos</span></summary>
+        <div class="ecorpo"><p>O bloque Córcega-Sardeña sepárase da Península Ibérica pola apertura do Mediterráneo occidental.</p></div></details>
+      <details class="era"><summary><span class="epoca">👣 Paleolítico · os primeiros pasos</span><span class="fechas">antes do 6000 a.C.</span></summary>
+        <div class="ecorpo"><p>Os primeiros humanos chegan á illa, probablemente cando o nivel do mar era inferior.</p></div></details>
+      <details class="era" data-dias="1,5"><summary><span class="epoca">🏺 Neolítico · as casas das fadas</span><span class="fechas">6000–3200 a.C.</span><span class="dias">D1 · D5</span></summary>
+        <div class="ecorpo"><p>Agricultura e gandaría transforman o territorio. Aparecen as <b>domus de janas</b> e na Nurra érguese o santuario escalonado de <b>Monte d'Accoddi</b>.</p><p class="ruta">Na ruta: <b>Día 1</b> · Accoddi · <b>Día 5</b> · Anghelu Ruju.</p><p class="promesa">Patrimonio Mundial UNESCO desde 2025.</p></div></details>
+      <details class="era" data-dias="1,2,4,5"><summary><span class="epoca">🗿 Civilización nuráxica · o tempo das torres</span><span class="fechas">1700–900 a.C.</span><span class="dias">D1 · D2 · D4 · D5</span></summary>
+        <div class="ecorpo"><p>Máis de <b>7.000 nuraghes</b>. Unha sociedade sen escritura que comerciaba con Micenas, Chipre e Creta.</p><p class="ruta">Na ruta: <b>Día 1</b> · Santu Antine · <b>Día 2</b> · Coddu Vecchiu · <b>Día 4</b> · Izzana · <b>Día 5</b> · Palmavera.</p></div></details>
+      <details class="era" data-dias="7"><summary><span class="epoca">🦅 Roma · a colonia e a ponte</span><span class="fechas">desde 238 a.C.</span><span class="dias">D7</span></summary>
+        <div class="ecorpo"><p>Roma toma Sardeña trala Primeira Guerra Púnica. No norte fúndase <b>Iulia Turris Libisonis</b> (46 a.C.).</p><p class="ruta">Na ruta: <b>Día 7</b> · Turris Libisonis, Ponte Romana e Antiquarium.</p></div></details>
+      <details class="era" data-dias="4,7"><summary><span class="epoca">👑 Os Xulgados · a Idade Media sarda</span><span class="fechas">s. IX–XIII</span><span class="dias">D4 · D7</span></summary>
+        <div class="ecorpo"><p>Nacen os <b>Giudicati</b> (Torres, Arborea, Gallura, Cagliari). O Xulgado de Torres explica o gran románico do norte.</p><p class="ruta">Na ruta: <b>Día 4/7</b> · Saccargia (1116) · <b>Día 7</b> · San Gavino.</p></div></details>
+      <details class="era" data-dias="1,5"><summary><span class="epoca">🏴 A Coroa de Aragón · a conquista que deixou unha lingua</span><span class="fechas">1323–1479</span><span class="dias">D1 · D5</span></summary>
+        <div class="ecorpo"><p>En <b>1354</b> a Coroa de Aragón conquista Alghero e repobóaa. Dese tronco nace o <b>alguerés</b>.</p><p class="ruta">Na ruta: <b>Día 5</b> · L'Alguer · <b>Día 1</b> · Castelsardo.</p></div></details>
+      <details class="era" data-dias="1,5,6"><summary><span class="epoca">🛡️ Monarquía Hispánica · as torres contra os corsarios</span><span class="fechas">s. XVI–XVIII</span><span class="dias">D1 · D5 · D6</span></summary>
+        <div class="ecorpo"><p>Contra a pirataría norteafricana: época das <b>torres costeiras</b> e das murallas modernas.</p><p class="ruta">Na ruta: <b>Día 6</b> · Torre Aragonesa da Pelosa · <b>Día 5</b> · murallas de Alghero · <b>Día 1</b> · Castelsardo.</p></div></details>
+      <details class="era" data-dias="3,6"><summary><span class="epoca">⚓ Savoia e Risorgimento · faros e exilios</span><span class="fechas">1720–1900</span><span class="dias">D3 · D6</span></summary>
+        <div class="ecorpo"><p><b>Garibaldi</b> morre en Caprera (1882). Faro de Capo Testa a mediados do s. XIX.</p><p class="ruta">Na ruta: <b>Día 3</b> · Caprera e Capo Testa · <b>Día 6</b> · Stintino.</p></div></details>
+      <details class="era" data-dias="2,3,7"><summary><span class="epoca">🏭 Século XX · emigración, industria e turismo</span><span class="fechas">1900–2000</span><span class="dias">D2 · D3 · D7</span></summary>
+        <div class="ecorpo"><p>1948: Rexión Autónoma. <b>1962</b>: Consorcio Costa Smeralda. <b>1994</b>: Parque Nacional do Arquipélago da Maddalena.</p></div></details>
+      <details class="era" data-dias="1,5"><summary><span class="epoca">🕊️ Século XXI · o recoñecemento do mundo</span><span class="fechas">2000–hoxe</span><span class="dias">D1 · D5</span></summary>
+        <div class="ecorpo"><p>En <b>2025</b> a UNESCO inscribe as <b>domus de janas</b> na lista do Patrimonio Mundial.</p></div></details>
+      <div class="note2">💡 Sardeña é un palimpsesto: cada xeración engadiu unha capa e ningunha conseguiu borrar as anteriores.</div>
+    </section>
+
+    <!-- MÚSICA SARDENA -->
+    <section class="tab" id="t-musica-s">
+      <p class="hint"><i class="fas fa-headphones" style="margin-right:6px;"></i>Unha playlist por xornada. Os botóns abren buscas en YouTube (▶) e Spotify (♫).</p>
+      <div class="daycard"><div class="dhead"><b>DÍA 1 · A illa que vos saúda</b><span>Chegada, chaira da Nurra, primeira pedra nuráxica</span></div>
+        <div class="song"><div class="stxt"><b>No potho reposare</b> · Maria Carta e Andrea Parodi<span class="why">A canción de amor sarda máis famosa: «non podo descansar».</span></div><a class="btn nav" data-mq="No potho reposare Maria Carta"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="No potho reposare Maria Carta"><i class="fab fa-spotify"></i></a></div>
+        <div class="song"><div class="stxt"><b>Ballu</b> · Tenores di Bitti<span class="why">As gargantas da Barbagia bailando.</span></div><a class="btn nav" data-mq="Tenores di Bitti Ballu"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Tenores di Bitti Ballu"><i class="fab fa-spotify"></i></a></div>
+      </div>
+      <div class="daycard"><div class="dhead"><b>DÍA 2 · A pedra que lembra</b><span>Tumba dos xigantes, granito rosado, costa inventada</span></div>
+        <div class="song"><div class="stxt"><b>Muttos</b> · Tenores di Bitti<span class="why">Versos pastorís en polifonía.</span></div><a class="btn nav" data-mq="Tenores di Bitti Muttos"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Tenores di Bitti Muttos"><i class="fab fa-spotify"></i></a></div>
+        <div class="song"><div class="stxt"><b>Sonos</b> · Elena Ledda<span class="why">«Sons»: memoria feita música.</span></div><a class="btn nav" data-mq="Elena Ledda Sonos"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Elena Ledda Sonos"><i class="fab fa-spotify"></i></a></div>
+      </div>
+      <div class="daycard"><div class="dhead"><b>DÍA 3 · O vento como personaxe</b><span>Arquipélago, estreito de Bonifacio, solpor en Capo Testa</span></div>
+        <div class="song"><div class="stxt"><b>Lu rusciu di lu mari</b> · Tradicional galuresa<span class="why">«O ruído do mar» en galurés.</span></div><a class="btn nav" data-mq="Lu rusciu di lu mari Gallura"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Lu rusciu di lu mari"><i class="fab fa-spotify"></i></a></div>
+        <div class="song"><div class="stxt"><b>Ave Maria sarda</b> · Maria Carta<span class="why">Para o barco entre Palau e La Maddalena.</span></div><a class="btn nav" data-mq="Maria Carta Ave Maria sarda"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Maria Carta Ave Maria"><i class="fab fa-spotify"></i></a></div>
+      </div>
+      <div class="daycard"><div class="dhead"><b>DÍA 4 · O corazón de granito</b><span>Tempio, Valle della Luna, o románico bicromo</span></div>
+        <div class="song"><div class="stxt"><b>Incanti</b> · Elena Ledda<span class="why">O encantamento da Valle della Luna.</span></div><a class="btn nav" data-mq="Elena Ledda Incanti"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Elena Ledda Incanti"><i class="fab fa-spotify"></i></a></div>
+        <div class="song"><div class="stxt"><b>In sos ojos</b> · Piero Marras<span class="why">O trobador sardo por excelencia.</span></div><a class="btn nav" data-mq="Piero Marras In sos ojos"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Piero Marras"><i class="fab fa-spotify"></i></a></div>
+      </div>
+      <div class="daycard"><div class="dhead"><b>DÍA 5 · A cidade que fala catalán</b><span>As casas das fadas e as murallas de L'Alguer</span></div>
+        <div class="song"><div class="stxt"><b>Cordemar</b> · Franca Masu<span class="why">Franca Masu canta en <b>alguerés</b>.</span></div><a class="btn nav" data-mq="Franca Masu Cordemar"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Franca Masu Cordemar"><i class="fab fa-spotify"></i></a></div>
+        <div class="song"><div class="stxt"><b>Almaviva</b> · Franca Masu<span class="why">Para o paseo polas murallas.</span></div><a class="btn nav" data-mq="Franca Masu Almaviva"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Franca Masu Almaviva"><i class="fab fa-spotify"></i></a></div>
+      </div>
+      <div class="daycard"><div class="dhead"><b>DÍA 6 · A catedral pinga a pinga</b><span>Capo Caccia, a Grotta, a Pelosa</span></div>
+        <div class="song"><div class="stxt"><b>Spunta la luna dal monte</b> · Tazenda<span class="why">O himno moderno de Sardeña.</span></div><a class="btn nav" data-mq="Tazenda Spunta la luna dal monte"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Tazenda Spunta la luna dal monte"><i class="fab fa-spotify"></i></a></div>
+        <div class="song"><div class="stxt"><b>Non mi giamedas</b> · Maria Carta<span class="why">«Non me chames»: o silencio subterráneo feito voz.</span></div><a class="btn nav" data-mq="Maria Carta Non mi giamedas"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Maria Carta Non mi giamedas"><i class="fab fa-spotify"></i></a></div>
+      </div>
+      <div class="daycard"><div class="dhead"><b>DÍA 7 · O círculo péchase</b><span>Mañá libre, Porto Torres, cea de despedida</span></div>
+        <div class="song"><div class="stxt"><b>Procurade 'e moderare</b> · Tradicional sarda<span class="why">O canto histórico contra a tiranía.</span></div><a class="btn nav" data-mq="Procurade de moderare"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Procurade de moderare"><i class="fab fa-spotify"></i></a></div>
+        <div class="song"><div class="stxt"><b>Funtanafrisca</b> · Piero Marras<span class="why">Auga fresca para a mañá sen plano.</span></div><a class="btn nav" data-mq="Piero Marras Funtanafrisca"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Piero Marras Funtanafrisca"><i class="fab fa-spotify"></i></a></div>
+      </div>
+      <div class="daycard"><div class="dhead"><b>DÍA 8 · A saída da illa</b><span>Ferry das 06:00 · a cuberta · a brétema</span></div>
+        <div class="song"><div class="stxt"><b>Luna</b> · Elena Ledda<span class="why">A lúa sobre o estreito mentres o ferry se afasta.</span></div><a class="btn nav" data-mq="Elena Ledda Luna"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="Elena Ledda Luna"><i class="fab fa-spotify"></i></a></div>
+        <div class="song"><div class="stxt"><b>No potho reposare</b> · reprise<span class="why">Agora xa sabedes por que non se pode descansar.</span></div><a class="btn nav" data-mq="No potho reposare"><i class="fab fa-youtube"></i></a><a class="btn sp" data-mq="No potho reposare"><i class="fab fa-spotify"></i></a></div>
+      </div>
+      <div class="note2">📚 Da bibliografía: Maria Carta · Tenores di Bitti (<i>cantu a tenore</i>, Patrimonio Inmaterial UNESCO) · Elena Ledda · Tazenda. <b>Bonus</b>: De André, <i>Hotel Supramonte</i>.</div>
+    </section>
+
+    <!-- ========== LIBRO (VOZ) ========== -->
+    <section class="tab" id="t-voz-s">
+      <p class="hint"><i class="fas fa-microphone-alt" style="margin-right:6px;"></i>O caderno lido en voz alta. Escolle a voz, proba, e toca unha pista. O reprodutor garda a posición por capítulo.</p>
+      <div class="card">
+        <h3><i class="fas fa-robot"></i> 1 · A voz</h3>
+        <select id="voz-voices"><option>Cargando voces…</option></select>
+        <button class="btn tq sm" id="voz-test"><i class="fas fa-play"></i> Probar a voz</button>
+        <div class="status" id="voz-status">Detectando voces…</div>
+        <label class="rate">Velocidade <input type="range" id="voz-rate" min="0.7" max="1.4" step="0.05" value="1"> <span id="voz-ratev">1×</span></label>
+        <div class="chain"><input type="checkbox" id="voz-chain" checked> Encadear capítulos automaticamente</div>
+      </div>
+      <div id="voz-now"></div>
+      <div class="letra" id="voz-letra" style="display:none"></div>
+      <div id="voz-blocks"></div>
+    </section>
+
+    <!-- RESERVAS SARDENA -->
+    <section class="tab" id="t-reservas-s">
+      <div class="card warn"><h3><i class="fas fa-clock"></i> 📌 Pechar ANTES de saír de Galicia</h3>
+        <label class="chk"><input type="checkbox" data-k="s_r1"><span><b>Ferry continental</b> · saída Porto Torres 06:00 do 4/9 · na fila antes das 04:45 · [COMPAÑÍA] → [PORTO]</span></label>
+        <label class="chk"><input type="checkbox" data-k="s_r2"><span><b>La Pelosa</b> · QR obrigatorio (15/5–15/10) · 3,50 €/persoa · semanas de antelación · levar esterilla</span></label>
+        <label class="chk"><input type="checkbox" data-k="s_r3"><span><b>Cala Coticcio</b> · só con guía ambiental autorizado · días de antelación · ou renunciar con paz</span></label>
+        <label class="chk"><input type="checkbox" data-k="s_r4"><span><b>Grotta di Nettuno</b> · entrada con hora (1–2 días antes) · barco se se evitan os 654 chanzos</span></label>
+        <label class="chk"><input type="checkbox" data-k="s_r5"><span><b>Santu Antine / Anghelu Ruju</b> · consultar entrada en tempada alta</span></label>
+      </div>
+      <div class="card warn"><h3><i class="fas fa-qrcode"></i> Recordatorio · O QR da Pelosa</h3>
+        <p style="margin:4px 0">Cando consigas a reserva: <b>1)</b> fai captura de pantalla do QR · <b>2)</b> gárdaa tamén en PDF · <b>3)</b> cómpreme a copia no correo. O control pode pedir o QR <b>sen cobertura</b>: leva sempre a copia offline.</p>
+      </div>
+      <div class="card ok"><h3><i class="fas fa-check-circle"></i> ✅ Non necesita reserva</h3>
+        <p><b>Ferry Palau–La Maddalena:</b> cada 30–45 min · billete no quiosco.<br><b>Roccia dell'Elefante, Capo Testa, Valle della Luna:</b> acceso libre.</p>
+        <p style="font-size:.78rem;color:var(--suave)">⚠️ Pausa meridiana xeral da arqueoloxía: 13–15 h. Pedra cedo ou tarde; cidade, sombra e mercado ao mediodía.</p>
+      </div>
+    </section>
+
+    <!-- NORMAS SARDENA -->
+    <section class="tab" id="t-normas-s">
+      <div class="card"><h3><i class="fas fa-water"></i> 🚐 Pelosa · normas inegociables</h3><p>QR persoal · esterilla propia · prohibido fumar · prohibido levar area/cunchas (multas de miles de €) · pés enxutos ao marchar.</p></div>
+      <div class="card"><h3><i class="fas fa-caravan"></i> 🚐 Camper · regra de ouro</h3><p><b>Estacionar si, acampar non.</b> Sen toldos nin cuñas en aparcadoiros tolerados. Auga e baleirado só en puntos habilitados (Fertilia, Valledoria, Porto Torres).</p></div>
+      <div class="card"><h3><i class="fas fa-ruler-vertical"></i> 🚐 A altura como credencial</h3><p>Vito &lt;1,80 m → entra en parkings con barra: Palau, murallas de Alghero, Sassari, Porto Torres, Lu Bagnu.</p></div>
+      <div class="card"><h3><i class="fas fa-archway"></i> 🚐 Cova e mar</h3><p>Grotta di Nettuno: mans nos petos. Posidonia: non retiralas da praia. Fondear só en boias ecolóxicas. Coticcio: só con guía.</p></div>
+      <div class="card"><h3><i class="fas fa-tools"></i> 🚐 Loxística</h3><p>⛽ Tempio: último punto abundante antes de Sassari. 🛒 Mercados de Alghero e Castelsardo para produto; Conad/Eurospin/Lidl/MD para despensa.</p><p>Emerxencias Italia: <a class="btn nav" href="tel:112" style="display:inline-block"><i class="fas fa-phone-alt"></i> 112</a></p></div>
+    </section>
+
+    <!-- VENTO SARDENA -->
+    <section class="tab" id="t-vento-s">
+      <div class="card"><h3><i class="fas fa-wind"></i> 💨 Mestral (NO) · o gran escultor</h3><p>Se sopra forte: praias orientadas ao oeste batidas → buscar calas a sotavento (cara ao leste).</p></div>
+      <div class="card"><h3><i class="fas fa-cloud-sun"></i> 🌬️ Predición por zonas (Windy)</h3>
+        <p style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn map" href="https://www.windy.com/41.1798/9.3824" target="_blank"><i class="fas fa-wind"></i> Palau</a>
+          <a class="btn map" href="https://www.windy.com/40.5587/8.3167" target="_blank"><i class="fas fa-wind"></i> Alghero</a>
+          <a class="btn map" href="https://www.windy.com/40.5678/8.1661" target="_blank"><i class="fas fa-wind"></i> Capo Caccia</a>
+          <a class="btn map" href="https://www.windy.com/40.9931/8.2025" target="_blank"><i class="fas fa-wind"></i> Pelosa</a>
+        </p>
+      </div>
+      <div class="card"><h3><i class="fas fa-exchange-alt"></i> 🔁 Plans B por vento</h3><ul>
+        <li><b>Día 3</b> mar pechado → trocar co Día 4.</li>
+        <li><b>Pelosa</b> pechada por vento / sen QR → Cala Lupo + Capo Falcone.</li>
+        <li><b>Cova</b> pechada por mar brava → miradoiros de Capo Caccia + Cala Dragunara.</li>
+        <li><b>Coticcio</b> pechada → Spalmatore ou Bassa Trinità.</li>
+      </ul></div>
+    </section>
+
+    <!-- SOS SARDENA -->
+    <button id="sos-s"><i class="fas fa-phone-alt"></i></button>
+    <div id="emg-s"><div class="box">
+      <h3><i class="fas fa-exclamation-triangle" style="color:var(--terra);"></i> 🆘 Emerxencia</h3>
+      <a class="btn nav big" href="tel:112"><i class="fas fa-phone-alt"></i> CHAMAR 112</a>
+      <p><b>⚓ Ferry 4 set:</b> saída 06:00 · fila antes das 04:45 · check-in pecha 30–60 min antes.</p>
+      <p><b>🏖️ Pelosa:</b> QR persoal obrigatorio + esterilla. Non levar area (multas de miles de €).</p>
+      <p><b>🛏️ Noites non negociables:</b> 30/8 preto do porto de Palau · 3/9 en Porto Torres.</p>
+      <button class="btn ruta big" id="emg-close-s"><i class="fas fa-times"></i> Pechar</button>
+    </div></div>
+
+    <!-- BARRA DE VOZ SARDENA -->
+    <div id="vozbar">
+      <div class="row">
+        <button id="voz-prev" title="Pista anterior"><i class="fas fa-backward"></i></button>
+        <button id="voz-back" title="Frase anterior"><i class="fas fa-step-backward"></i></button>
+        <button id="voz-play" class="big" title="Reproducir / Pausa"><i class="fas fa-play"></i></button>
+        <button id="voz-fwd" title="Frase seguinte"><i class="fas fa-step-forward"></i></button>
+        <button id="voz-next" title="Pista seguinte"><i class="fas fa-forward"></i></button>
+        <button id="voz-stop" title="Parar"><i class="fas fa-stop"></i></button>
+      </div>
+      <div class="info" id="voz-info">Escolle un capítulo e unha pista para comezar</div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+  APP CAMIÑO
+  ============================================================ -->
+  <div class="app-container" id="app-camino">
+    <header>
+      <div class="top">
+        <div>
+          <h1><i class="fas fa-mountain" style="margin-right:6px;"></i>O CAMIÑO <span class="volver" id="volver-camino"><i class="fas fa-arrow-left"></i> Menú</span></h1>
+          <div class="sub">Zaragoza · Pirineos · Costa Brava · Vito &lt;1,80 m</div>
+        </div>
+        <button class="hbtn" id="dark-camino"><i class="fas fa-moon"></i></button>
+      </div>
+      <div class="prog">Progreso: <b>✓ <span id="pc-c">0</span>/<span id="pt-c">0</span></b> lugares visitados</div>
+    </header>
+
+    <nav class="tabs" id="tabs-camino">
+      <button class="on" data-tab="t-zaragoza"><i class="fas fa-city"></i><span>ZARAGOZA</span></button>
+      <button data-tab="t-pirineos"><i class="fas fa-mountain"></i><span>PIRINEOS</span></button>
+      <button data-tab="t-costabrava"><i class="fas fa-water"></i><span>COSTA BRAVA</span></button>
+      <button data-tab="t-acceso"><i class="fas fa-ship"></i><span>ACCESO BCN</span></button>
+    </nav>
+
+    <!-- ZARAGOZA -->
+    <section class="tab on" id="t-zaragoza">
+      <h2 style="font-family:'Fraunces',serif; font-weight:500; font-size:1.8rem; color:var(--mar); margin-bottom:0.3rem;">Zaragoza · 1 día</h2>
+      <p style="color:var(--suave); margin-bottom:0.5rem;">A porta do Ebro · ZBE: aparcar fóra (Grandes Vías) e mover a pé ou tranvía.</p>
+      <div class="map-wrapper"><div id="mapZaragoza" class="map-container"></div></div>
+      <div class="grid">
+        <div class="card"><div class="top"><h3>Basílica del Pilar</h3><span class="stars">⭐⭐⭐⭐⭐</span></div><span class="tag">O esencial</span><p>O corazón de Zaragoza. Catedral barroca cunha lenda que remonta ao ano 40 d.C.</p><div class="meta"><span><i class="fas fa-clock"></i> 1,5–2 h</span><span><i class="fas fa-sun"></i> mañá ou solpor</span></div><div class="curio"><strong>✨ Curio:</strong> Tres bombas caeron na Guerra Civil e ningunha explotou.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_z1"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Palacio da Aljafería</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Se hai tempo</span><p>Palacio taifa do século XI, un dos mellores exemplos de arte islámica.</p><div class="meta"><span><i class="fas fa-clock"></i> 1,5–2 h</span><span><i class="fas fa-sun"></i> mañá</span></div><div class="curio"><strong>✨ Curio:</strong> O nome vén do árabe "Al-Jafariya" (palacio do león).</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_z2"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Mercado Central &amp; Lonxa</h3><span class="stars">⭐⭐⭐</span></div><span class="tag">Micro-extensión</span><p>Mercado modernista de ferro e cristal (1895). Perfecto para abastecer a despensa.</p><div class="meta"><span><i class="fas fa-clock"></i> 30–45 min</span><span><i class="fas fa-shopping-basket"></i> queixo, longaniza, froita</span></div><div class="curio"><strong>✨ Curio:</strong> A Lonxa ten medallóns con Carlos V.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_z3"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Igrexas mudéxares</h3><span class="stars">⭐⭐⭐</span></div><span class="tag">Micro-extensión</span><p>San Pablo e San Miguel. Torres e ábsidas de ladrillo con azulexos, Patrimonio Mundial.</p><div class="meta"><span><i class="fas fa-clock"></i> 15–20 min cada</span></div><div class="curio"><strong>✨ Curio:</strong> A torre de San Pablo inspirou a Gaudí.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_z4"><label>Marcar como visitado</label></div></div>
+      </div>
+      <div class="special-box"><h4>🚐 ZBE Zaragoza — aparcar fóra</h4><ul>
+        <li><strong>A Vito sen etiqueta C:</strong> non pode entrar na ZBE.</li>
+        <li><strong>Opción:</strong> aparcadoiro de <strong>Grandes Vías</strong> (saída 311 da Z-40), fóra da ZBE.</li>
+        <li>Dende alí: 15 min a pé ou tranvía (L1) ata a Praza do Pilar.</li>
+      </ul></div>
+    </section>
+
+    <!-- PIRINEOS -->
+    <section class="tab" id="t-pirineos">
+      <h2 style="font-family:'Fraunces',serif; font-weight:500; font-size:1.8rem; color:var(--mar); margin-bottom:0.3rem;">Pirineos Cataláns · 2–3 días</h2>
+      <p style="color:var(--suave); margin-bottom:0.5rem;">Granito, románico, vales glaciais e vilas de pedra.</p>
+      <div class="map-wrapper"><div id="mapPirineos" class="map-container"></div></div>
+      <div class="grid">
+        <div class="card"><div class="top"><h3>Val de Boí · igrexas</h3><span class="stars">⭐⭐⭐⭐⭐</span></div><span class="tag">O esencial</span><p>Nove igrexas románicas (s. XI–XII), Patrimonio Mundial.</p><div class="meta"><span><i class="fas fa-clock"></i> 2–3 h</span></div><div class="curio"><strong>✨ Curio:</strong> O Pantocrátor de Sant Climent é unha das imaxes máis importantes da arte románica.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p1"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Aigüestortes</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Se hai tempo</span><p>Parque Nacional, único de Catalunya. Lagos glaciares e picos &gt;3.000 m.</p><div class="meta"><span><i class="fas fa-clock"></i> 2–4 h</span></div><div class="curio"><strong>✨ Curio:</strong> Ten máis de 200 lagos de orixe glaciar.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p2"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Vall d'Aran</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Identidade</span><p>Val con lingua propia (aranés). Vielha, Bossòst e Bagergue.</p><div class="meta"><span><i class="fas fa-clock"></i> 1–2 h</span><span><i class="fas fa-language"></i> aranés</span></div><div class="curio"><strong>✨ Curio:</strong> O aranés é lingua oficial en Catalunya.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p3"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Castell de Mur</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Micro-extensión</span><p>Vila fortaleza do s. XI nun outeiro, con vistas á Conca de Tremp.</p><div class="meta"><span><i class="fas fa-clock"></i> 1–1,5 h</span></div><div class="curio"><strong>✨ Curio:</strong> O nome "Mur" vén do latín "murus" (muralla).</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p4"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Conca de Tremp · dinosauros</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Se hai tempo</span><p>Paisaxe xeolóxica espectacular con xacementos de ovos de dinosauro (Coll de Nargó).</p><div class="meta"><span><i class="fas fa-clock"></i> 1 h</span></div><div class="curio"><strong>✨ Curio:</strong> Os ovos teñen 70–80 millóns de anos.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p5"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Sant Pere de Burgal</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Micro-extensión</span><p>Igrexa románica do s. XI no val de Àneu.</p><div class="meta"><span><i class="fas fa-clock"></i> 30 min</span></div><div class="curio"><strong>✨ Curio:</strong> A torre foi usada como defensa nas guerras carlistas.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p6"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Santa Maria d'Àneu</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Micro-extensión</span><p>Igrexa románica con fachada de arquiños lombardos.</p><div class="meta"><span><i class="fas fa-clock"></i> 30 min</span></div><div class="curio"><strong>✨ Curio:</strong> Ten unha das pinturas da "Adoración dos Reis" máis importantes.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p7"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Cadí-Moixeró</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Paisaxe</span><p>Parque natural con serras calcarias, vales glaciares e pobos medievais.</p><div class="meta"><span><i class="fas fa-clock"></i> 1–3 h</span></div><div class="curio"><strong>✨ Curio:</strong> O Cadí é un dos macizos calcarios máis altos de Europa.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p8"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Serinyà · covas prehistóricas</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Micro-extensión</span><p>Covas do Paleolítico con restos de neandertais e animais extintos.</p><div class="meta"><span><i class="fas fa-clock"></i> 1 h</span></div><div class="curio"><strong>✨ Curio:</strong> Habitadas dende o Paleolítico Medio ata o Neolítico.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p9"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>La Draga (Banyoles)</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Se hai tempo</span><p>Xacemento neolítico (5.600 a.C.) á beira do lago de Banyoles.</p><div class="meta"><span><i class="fas fa-clock"></i> 1–1,5 h</span></div><div class="curio"><strong>✨ Curio:</strong> Conservación excepcional de materiais orgánicos.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_p10"><label>Marcar como visitado</label></div></div>
+      </div>
+    </section>
+
+    <!-- COSTA BRAVA -->
+    <section class="tab" id="t-costabrava">
+      <h2 style="font-family:'Fraunces',serif; font-weight:500; font-size:1.8rem; color:var(--mar); margin-bottom:0.3rem;">Costa Brava · 2 días</h2>
+      <p style="color:var(--suave); margin-bottom:0.5rem;">Megalitismo, iberos, gregos, romanos, medievo e paisaxe litoral.</p>
+      <div class="map-wrapper"><div id="mapCostaBrava" class="map-container"></div></div>
+      <div class="grid">
+        <div class="card"><div class="top"><h3>Empúries</h3><span class="stars">⭐⭐⭐⭐⭐</span></div><span class="tag">O esencial</span><p>Grega (s. VI a.C.) e romana. A transición entre ambas cidades.</p><div class="meta"><span><i class="fas fa-clock"></i> 2–3 h</span></div><div class="curio"><strong>✨ Curio:</strong> O nome vén do grego "Emporion" (mercado).</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_c1"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Ullastret</h3><span class="stars">⭐⭐⭐⭐⭐</span></div><span class="tag">O esencial</span><p>Capital dos indiketes (iberos), cidade fortificada do s. VI a.C.</p><div class="meta"><span><i class="fas fa-clock"></i> 2 h</span></div><div class="curio"><strong>✨ Curio:</strong> A muralla é unha das mellor conservadas de Europa.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_c2"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Sant Pere de Rodes</h3><span class="stars">⭐⭐⭐⭐⭐</span></div><span class="tag">O esencial</span><p>Mosteiro beneditino do s. X, xoia do románico catalán.</p><div class="meta"><span><i class="fas fa-clock"></i> 1,5–2 h</span></div><div class="curio"><strong>✨ Curio:</strong> Fundado por monxes que chegaron nunha barca varada.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_c3"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Megalitismo · Cap de Creus</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Se hai tempo</span><p>Dólmenes e menhires neolíticos no punto máis oriental da Península.</p><div class="meta"><span><i class="fas fa-clock"></i> 1–1,5 h</span></div><div class="curio"><strong>✨ Curio:</strong> O Cap de Creus é un dos lugares máis ventosos.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_c4"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Ciutadella de Roses</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Se hai tempo</span><p>Fortaleza do s. XVI sobre antigo asentamento grego.</p><div class="meta"><span><i class="fas fa-clock"></i> 1–1,5 h</span></div><div class="curio"><strong>✨ Curio:</strong> Fundada polos gregos no s. VIII a.C. como "Rhode".</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_c5"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Peratallada</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Micro-extensión</span><p>Vila medieval fortificada con castelo, igrexa gótica e praza porticada.</p><div class="meta"><span><i class="fas fa-clock"></i> 1–1,5 h</span></div><div class="curio"><strong>✨ Curio:</strong> O nome vén do latín "Petra Talada" (pedra cortada).</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_c6"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Castell del Montgrí</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Micro-extensión</span><p>Castelo do s. XIII nun outeiro de 315 m.</p><div class="meta"><span><i class="fas fa-clock"></i> 1 h</span></div><div class="curio"><strong>✨ Curio:</strong> Coñecido como o "castelo dos tres reis".</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_c7"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Tossa de Mar · Vila Vella</h3><span class="stars">⭐⭐⭐⭐</span></div><span class="tag">Se hai tempo</span><p>Vila medieval amurallada con vistas ao mar.</p><div class="meta"><span><i class="fas fa-clock"></i> 1,5–2 h</span></div><div class="curio"><strong>✨ Curio:</strong> Escenario de "Pandora i l'holandès errant".</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_c8"><label>Marcar como visitado</label></div></div>
+        <div class="card"><div class="top"><h3>Poblats ibèrics</h3><span class="stars">⭐⭐⭐</span></div><span class="tag">Micro-extensión</span><p>Castell de Palamós e Puig de Castellet. Dous poboados indiketes.</p><div class="meta"><span><i class="fas fa-clock"></i> 45 min–1 h cada</span></div><div class="curio"><strong>✨ Curio:</strong> Puig de Castellet foi destruído durante a invasión cartaxinesa.</div><div class="checkbox-wrap"><input type="checkbox" data-done="c_c9"><label>Marcar como visitado</label></div></div>
+      </div>
+    </section>
+
+    <!-- ACCESO BARCELONA -->
+    <section class="tab" id="t-acceso">
+      <h2 style="font-family:'Fraunces',serif; font-weight:500; font-size:1.8rem; color:var(--mar); margin-bottom:0.3rem;">🚐 Acceso a Barcelona e Porto de Grimaldi Lines</h2>
+      <div class="special-box"><h4>📌 ZBE de Barcelona · normativa 2026</h4><ul>
+        <li><strong>A Vito sen etiqueta C</strong> non pode circular polo interior da cidade.</li>
+        <li><strong>Vías libres:</strong> <strong>Ronda de Dalt (B-20)</strong> e <strong>Ronda Litoral (B-10)</strong>.</li>
+        <li><strong>Non saír</strong> da Ronda Litoral cara ao interior: multa de 200–300 €.</li>
+      </ul></div>
+      <div class="special-box"><h4>🗺️ Traxecto paso a paso</h4><ul>
+        <li><strong>1.</strong> AP-7 ou C-32 dirección Barcelona.</li>
+        <li><strong>2.</strong> Ronda Litoral (B-10) sentido porto.</li>
+        <li><strong>3.</strong> Saída <strong>Port de Barcelona</strong> → <strong>Grimaldi Lines</strong> (Moll de Sant Bertran).</li>
+        <li><strong>4.</strong> Permanece na Ronda Litoral ata a saída do porto.</li>
+      </ul></div>
+      <div class="route-box">
+        <p style="font-weight:600; font-size:1.1rem;">🧭 Ruta segura en Google Maps</p>
+        <a id="gmapsRouteBtn" class="btn-route" href="#" target="_blank">📍 Abrir ruta en Google Maps</a>
+        <p style="margin-top:0.8rem; font-size:0.9rem; color:var(--suave);"><strong>Non saias da Ronda Litoral</strong> ata a saída do porto.</p>
+      </div>
+      <div class="special-box"><h4>⚓ Grimaldi Lines</h4><ul>
+        <li><strong>Terminal:</strong> Moll de Sant Bertran.</li>
+        <li><strong>Check-in:</strong> pecha 30–60 min antes.</li>
+        <li><strong>Teléfono:</strong> +34 93 295 29 00 [CB].</li>
+      </ul></div>
+    </section>
+
+    <!-- SOS CAMIÑO -->
+    <button id="sos-c"><i class="fas fa-phone-alt"></i></button>
+    <div id="emg-c"><div class="box">
+      <h3><i class="fas fa-exclamation-triangle" style="color:var(--terra);"></i> 🆘 Emerxencia</h3>
+      <a class="btn nav big" href="tel:112"><i class="fas fa-phone-alt"></i> CHAMAR 112</a>
+      <p><b>🚐 ZBE Barcelona:</b> Ronda Litoral (B-10) · NON saír cara ao interior.</p>
+      <p><b>⚓ Grimaldi Lines:</b> Moll de Sant Bertran · chegar 1,5 h antes.</p>
+      <button class="btn ruta big" id="emg-close-c"><i class="fas fa-times"></i> Pechar</button>
+    </div></div>
+  </div>
+
+  <div id="print-area"></div>
+
+  <!-- ============================================================
+  SCRIPTS
+  ============================================================ -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // ============================================================
+    // 1. MENÚ INICIAL
+    // ============================================================
+    const menu = document.getElementById('menu-inicial');
+    const appSardena = document.getElementById('app-sardena');
+    const appCamino = document.getElementById('app-camino');
+    const body = document.body;
+
+    function showApp(appName) {
+      menu.style.display = 'none';
+      appSardena.classList.remove('on');
+      appCamino.classList.remove('on');
+      body.classList.remove('modo-camino');
+      if (appName === 'sardena') {
+        appSardena.classList.add('on');
+        body.classList.remove('modo-camino');
+        document.querySelectorAll('#tabs-sardena button').forEach(b => b.classList.remove('on'));
+        document.querySelector('#tabs-sardena button[data-tab="t-ruta-s"]').classList.add('on');
+        document.querySelectorAll('#app-sardena section.tab').forEach(s => s.classList.remove('on'));
+        document.getElementById('t-ruta-s').classList.add('on');
+        setTimeout(() => { if (window._mapZaragoza) window._mapZaragoza.invalidateSize(); }, 300);
+      } else if (appName === 'camino') {
+        appCamino.classList.add('on');
+        body.classList.add('modo-camino');
+        document.querySelectorAll('#tabs-camino button').forEach(b => b.classList.remove('on'));
+        document.querySelector('#tabs-camino button[data-tab="t-zaragoza"]').classList.add('on');
+        document.querySelectorAll('#app-camino section.tab').forEach(s => s.classList.remove('on'));
+        document.getElementById('t-zaragoza').classList.add('on');
+        setTimeout(() => {
+          if (window._mapZaragoza) window._mapZaragoza.invalidateSize();
+          if (window._mapPirineos) window._mapPirineos.invalidateSize();
+          if (window._mapCostaBrava) window._mapCostaBrava.invalidateSize();
+        }, 400);
+      }
+      updateProgress();
+    }
+
+    document.getElementById('volver-sardena').addEventListener('click', () => { appSardena.classList.remove('on');
+      menu.style.display = 'flex'; });
+    document.getElementById('volver-camino').addEventListener('click', () => { appCamino.classList.remove('on');
+      body.classList.remove('modo-camino');
+      menu.style.display = 'flex'; });
+    document.querySelectorAll('.menu-card').forEach(card => { card.addEventListener('click', () => showApp(card.dataset
+        .app)); });
+
+    // ============================================================
+    // 2. PESTAÑAS
+    // ============================================================
+    function initTabs(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const tabs = container.querySelectorAll('nav.tabs button');
+      tabs.forEach(btn => {
+        btn.addEventListener('click', function() {
+          tabs.forEach(b => b.classList.remove('on'));
+          this.classList.add('on');
+          const sectionId = this.dataset.tab;
+          const parent = this.closest('.app-container');
+          parent.querySelectorAll('section.tab').forEach(s => s.classList.remove('on'));
+          const target = parent.querySelector('#' + sectionId);
+          if (target) target.classList.add('on');
+          setTimeout(() => {
+            if (window._mapZaragoza) window._mapZaragoza.invalidateSize();
+            if (window._mapPirineos) window._mapPirineos.invalidateSize();
+            if (window._mapCostaBrava) window._mapCostaBrava.invalidateSize();
+          }, 200);
+        });
+      });
+    }
+    initTabs('app-sardena');
+    initTabs('app-camino');
+
+    // ============================================================
+    // 3. MODO ESCURO
+    // ============================================================
+    function setDark(app, val) {
+      const key = 'dark_' + app;
+      const btn = document.getElementById('dark-' + app);
+      document.body.classList.toggle('dark', val);
+      if (btn) btn.innerHTML = val ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem(key, val ? '1' : '0');
+    }
+
+    function initDark(app) {
+      const key = 'dark_' + app;
+      const val = localStorage.getItem(key) === '1';
+      const btn = document.getElementById('dark-' + app);
+      if (!btn) return;
+      document.body.classList.toggle('dark', val);
+      btn.innerHTML = val ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      btn.addEventListener('click', () => setDark(app, !document.body.classList.contains('dark')));
+    }
+    initDark('sardena');
+    initDark('camino');
+
+    // ============================================================
+    // 4. PROGRESO
+    // ============================================================
+    function updateProgress() {
+      const sCbs = document.querySelectorAll('#app-sardena input[data-done]');
+      const sTotal = sCbs.length;
+      const sDone = [...sCbs].filter(c => c.checked).length;
+      document.getElementById('pt-s').textContent = sTotal;
+      document.getElementById('pc-s').textContent = sDone;
+
+      const cCbs = document.querySelectorAll('#app-camino input[data-done]');
+      const cTotal = cCbs.length;
+      const cDone = [...cCbs].filter(c => c.checked).length;
+      document.getElementById('pt-c').textContent = cTotal;
+      document.getElementById('pc-c').textContent = cDone;
+    }
+
+    document.querySelectorAll('#app-sardena input[data-done]').forEach(c => {
+      const key = 's_' + c.dataset.done;
+      c.checked = localStorage.getItem(key) === '1';
+      c.addEventListener('change', () => { localStorage.setItem(key, c.checked ? '1' : '0');
+        updateProgress(); });
+    });
+    document.querySelectorAll('#app-camino input[data-done]').forEach(c => {
+      const key = 'c_' + c.dataset.done;
+      c.checked = localStorage.getItem(key) === '1';
+      c.addEventListener('change', () => { localStorage.setItem(key, c.checked ? '1' : '0');
+        updateProgress(); });
+    });
+    updateProgress();
+
+    // ============================================================
+    // 5. NOTAS SARDENA
+    // ============================================================
+    document.querySelectorAll('#app-sardena textarea[data-note]').forEach(t => {
+      const key = 's_note_' + t.dataset.note;
+      t.value = localStorage.getItem(key) || '';
+      t.addEventListener('input', () => localStorage.setItem(key, t.value));
+    });
+
+    // ============================================================
+    // 6. BUSCADOR SARDENA
+    // ============================================================
+    const qS = document.getElementById('q-s');
+    const qinfoS = document.getElementById('qinfo-s');
+    if (qS) {
+      qS.addEventListener('input', () => {
+        const s = qS.value.trim().toLowerCase();
+        const days = document.querySelectorAll('#app-sardena details.day');
+        if (s.length < 2) {
+          days.forEach(d => d.classList.remove('hidden'));
+          document.querySelectorAll('#app-sardena .hit').forEach(e => e.classList.remove('hit'));
+          qinfoS.textContent = 'Escribe para filtrar días e resaltar coincidencias.';
+          return;
+        }
+        let nd = 0,
+          nm = 0;
+        days.forEach(d => {
+          d.querySelectorAll('.hit').forEach(e => e.classList.remove('hit'));
+          const els = [...d.querySelectorAll('.stop, .curio li, .blk')].filter(e => e.textContent
+            .toLowerCase().includes(s));
+          if (els.length) { d.classList.remove('hidden');
+            d.open = true;
+            els.forEach(e => e.classList.add('hit'));
+            nd++;
+            nm += els.length; } else d.classList.add('hidden');
+        });
+        qinfoS.textContent = nm + ' coincidencias en ' + nd + ' día' + (nd === 1 ? '' : 's') + (nd === 0 ?
+          ' · proba con: auga, fainé, QR, UNESCO' : '');
+      });
+    }
+
+    // ============================================================
+    // 7. CHIPS SARDENA
+    // ============================================================
+    document.querySelectorAll('#chips-s button[data-goto]').forEach(b => {
+      b.addEventListener('click', () => {
+        const d = document.getElementById(b.dataset.goto);
+        if (d) { d.open = true;
+          d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      });
+    });
+
+    // ============================================================
+    // 8. MODO HOXE SARDENA
+    // ============================================================
+    const datas = ['2026-08-28', '2026-08-29', '2026-08-30', '2026-08-31', '2026-09-01', '2026-09-02', '2026-09-03',
+      '2026-09-04'
+    ];
+    const hoxe = new Date().toISOString().slice(0, 10);
+    const idx = datas.indexOf(hoxe);
+    if (idx > -1) {
+      const d = document.getElementById('d' + (idx + 1) + '-s');
+      if (d) {
+        d.open = true;
+        d.classList.add('today');
+        const sum = d.querySelector('summary');
+        if (sum) sum.insertAdjacentHTML('afterbegin', '<span class="badge">HOXE</span>');
+        const banner = document.getElementById('hoxe-s');
+        if (banner) banner.innerHTML = '<div class="banner"><i class="fas fa-location-dot" style="margin-right:8px;"></i> Hoxe tócache: DÍA ' +
+          (idx + 1) + ' · ' + (d.querySelector('summary .km')?.textContent || '') + '</div>';
+        const chip = document.querySelector('#chips-s button[data-goto="d' + (idx + 1) + '-s"]');
+        if (chip) chip.classList.add('today');
+      }
+    }
+
+    // ============================================================
+    // 9. CRONOLOXÍA SARDENA
+    // ============================================================
+    document.querySelectorAll('#fchips-s button').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('#fchips-s button').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        const f = b.dataset.f;
+        document.querySelectorAll('#t-crono-s details.era').forEach(e => {
+          e.classList.remove('hit', 'off');
+          if (f === 'all') return;
+          const dias = (e.dataset.dias || '').split(',');
+          if (dias.includes(f)) { e.classList.add('hit');
+            e.open = true; } else if (e.dataset.dias) { e.classList.add('off'); }
+        });
+      });
+    });
+
+    // ============================================================
+    // 10. ENLACES
+    // ============================================================
+    const enc = s => encodeURIComponent(s);
+    document.querySelectorAll('a[data-q]').forEach(a => { if (!a.dataset.co) a.href =
+        'https://www.google.com/maps/search/?api=1&query=' + enc(a.dataset.q); });
+    document.querySelectorAll('a[data-co]').forEach(a => { a.href =
+        'https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=' + a.dataset.co; });
+    document.querySelectorAll('a[data-dir]').forEach(a => {
+      const p = a.dataset.dir.split('|');
+      const o = p[0],
+        d = p[p.length - 1],
+        w = p.slice(1, -1);
+      a.href = 'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=' + enc(o) + '&destination=' + enc(
+        d) + (w.length ? '&waypoints=' + w.map(enc).join('|') : '');
+    });
+    document.querySelectorAll('a[data-mq]').forEach(a => {
+      const q = enc(a.dataset.mq);
+      a.href = a.classList.contains('sp') ? ('https://open.spotify.com/search/' + q) :
+        ('https://www.youtube.com/results?search_query=' + q);
+      a.target = '_blank';
+      a.rel = 'noopener';
+    });
+
+    // RUTA GOOGLE MAPS (Acceso BCN)
+    const routeBtn = document.getElementById('gmapsRouteBtn');
+    if (routeBtn) {
+      const startLat = 41.421,
+        startLng = 2.218;
+      const endLat = 41.338,
+        endLng = 2.158;
+      routeBtn.href =
+        `https://www.google.com/maps/dir/${startLat},${startLng}/${endLat},${endLng}/@41.38,2.18,12z/data=!4m2!4m1!3e0?entry=ttu`;
+    }
+
+    // ============================================================
+    // 11. MAPAS (CAMIÑO)
+    // ============================================================
+    function initMap(containerId, center, zoom, markers) {
+      const map = L.map(containerId, { zoomControl: true }).setView(center, zoom);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+      markers.forEach(m => {
+        L.circleMarker(m.coords, { radius: 7, color: '#6B5344', weight: 2, fillColor: '#C4A882',
+            fillOpacity: 0.9 }).addTo(map).bindPopup(`<strong>${m.name}</strong><br>${m.desc || ''}`);
+      });
+      return map;
+    }
+
+    const markersZ = [
+      { name: 'Basílica del Pilar', coords: [41.657, -0.878], desc: '⭐⭐⭐⭐⭐' },
+      { name: 'Aljafería', coords: [41.657, -0.897], desc: '⭐⭐⭐⭐' },
+      { name: 'Mercado Central', coords: [41.653, -0.878], desc: '⭐⭐⭐' },
+      { name: 'San Pablo', coords: [41.657, -0.883], desc: '⭐⭐⭐' },
+    ];
+    window._mapZaragoza = initMap('mapZaragoza', [41.656, -0.877], 13, markersZ);
+
+    const markersP = [
+      { name: 'Val de Boí', coords: [42.522, 0.835], desc: '⭐⭐⭐⭐⭐' },
+      { name: 'Aigüestortes', coords: [42.56, 0.94], desc: '⭐⭐⭐⭐' },
+      { name: 'Vall d\'Aran (Vielha)', coords: [42.70, 0.80], desc: '⭐⭐⭐⭐' },
+      { name: 'Castell de Mur', coords: [42.10, 0.85], desc: '⭐⭐⭐⭐' },
+      { name: 'Coll de Nargó', coords: [42.17, 1.25], desc: '⭐⭐⭐⭐' },
+      { name: 'Sant Pere de Burgal', coords: [42.53, 1.12], desc: '⭐⭐⭐⭐' },
+      { name: 'Santa Maria d\'Àneu', coords: [42.58, 1.10], desc: '⭐⭐⭐⭐' },
+      { name: 'Cadí-Moixeró', coords: [42.30, 1.78], desc: '⭐⭐⭐⭐' },
+      { name: 'Serinyà', coords: [42.17, 2.75], desc: '⭐⭐⭐⭐' },
+      { name: 'La Draga', coords: [42.11, 2.76], desc: '⭐⭐⭐⭐' },
+    ];
+    window._mapPirineos = initMap('mapPirineos', [42.55, 1.0], 8.5, markersP);
+
+    const markersC = [
+      { name: 'Empúries', coords: [42.14, 3.12], desc: '⭐⭐⭐⭐⭐' },
+      { name: 'Ullastret', coords: [42.00, 3.07], desc: '⭐⭐⭐⭐⭐' },
+      { name: 'Sant Pere de Rodes', coords: [42.32, 3.16], desc: '⭐⭐⭐⭐⭐' },
+      { name: 'Cap de Creus (dólmenes)', coords: [42.32, 3.32], desc: '⭐⭐⭐⭐' },
+      { name: 'Ciutadella de Roses', coords: [42.27, 3.17], desc: '⭐⭐⭐⭐' },
+      { name: 'Peratallada', coords: [41.97, 3.08], desc: '⭐⭐⭐⭐' },
+      { name: 'Castell del Montgrí', coords: [42.06, 3.16], desc: '⭐⭐⭐⭐' },
+      { name: 'Tossa de Mar', coords: [41.72, 2.93], desc: '⭐⭐⭐⭐' },
+      { name: 'Castell de Palamós', coords: [41.85, 3.13], desc: '⭐⭐⭐' },
+    ];
+    window._mapCostaBrava = initMap('mapCostaBrava', [42.15, 3.15], 9.5, markersC);
+
+    setTimeout(() => {
+      if (window._mapZaragoza) window._mapZaragoza.invalidateSize();
+      if (window._mapPirineos) window._mapPirineos.invalidateSize();
+      if (window._mapCostaBrava) window._mapCostaBrava.invalidateSize();
+    }, 600);
+
+    // ============================================================
+    // 12. RESERVAS SARDENA
+    // ============================================================
+    document.querySelectorAll('#app-sardena input[data-k]').forEach(c => {
+      const key = 's_res_' + c.dataset.k;
+      c.checked = localStorage.getItem(key) === '1';
+      c.addEventListener('change', () => localStorage.setItem(key, c.checked ? '1' : '0'));
+    });
+
+    // ============================================================
+    // 13. SOS
+    // ============================================================
+    document.getElementById('sos-s')?.addEventListener('click', () => document.getElementById('emg-s').classList.add('on'));
+    document.getElementById('emg-close-s')?.addEventListener('click', () => document.getElementById('emg-s').classList.remove(
+      'on'));
+    document.getElementById('sos-c')?.addEventListener('click', () => document.getElementById('emg-c').classList.add('on'));
+    document.getElementById('emg-close-c')?.addEventListener('click', () => document.getElementById('emg-c').classList.remove(
+      'on'));
+    document.querySelectorAll('#emg-s, #emg-c').forEach(el => {
+      el?.addEventListener('click', e => { if (e.target.id === el.id) el.classList.remove('on'); });
+    });
+
+    // ============================================================
+    // 14. IMPRIMIR SARDENA
+    // ============================================================
+    document.querySelectorAll('#app-sardena button[data-print]').forEach(b => {
+      b.addEventListener('click', () => {
+        const d = document.getElementById(b.dataset.print);
+        if (!d) return;
+        const clone = d.cloneNode(true);
+        clone.querySelectorAll('details').forEach(x => x.open = true);
+        clone.open = true;
+        const pa = document.getElementById('print-area');
+        pa.innerHTML = '';
+        pa.appendChild(clone);
+        window.print();
+        setTimeout(() => { pa.innerHTML = ''; }, 1000);
+      });
+    });
+
+    // ============================================================
+    // 15. MÓDULO DE VOZ (AUDIOLIBRO) — COMPLETO
+    // ============================================================
+    const LIBRO = [{
+      id: 'prologo',
+      titulo: 'Prólogo · A illa que sempre estivo aí',
+      pistas: [
+        { t: 'A illa que agarda',
+          x: 'Hai illas que aparecen nos mapas antes de existir na imaxinación. Outras, pola contra, pasan anos agardando pacientemente a que alguén as descubra de verdade. Sardeña pertence a esa segunda categoría. Está situada no centro xeográfico do Mediterráneo occidental, entre Europa e África, entre as rutas comerciais que durante milenios transportaron metais, cereais, soldados, mercadores e deuses. E, con todo, permanece sorprendentemente ausente do relato común europeo. Para moitos continúa sendo apenas un destino de praias transparentes e veráns luminosos, un lugar ao que se chega para descansar e do que se marcha cun álbum cheo de fotografías imposibles. Poucos sospeitan que baixo esa superficie azul repousa unha das civilizacións máis antigas e enigmáticas do continente.' },
+        { t: 'Este caderno naceu dúas veces',
+          x: 'Este caderno naceu dúas veces. A primeira, nunha noite de inverno en Galicia, coa cociña chea de mapas abertos, dous cafés arrefriando e unha ruta que o abarcaba todo: a illa enteira, oito xornadas, case mil quilómetros, tres horas de volante ao día. Naquela noite parecía unha proeza razoable. A segunda vez naceu cando un de nós, sen levantar a vista do mapa, dixo o que os dous pensabamos: iso non son vacacións, é un traballo a quendas. E tiña razón. Esta edición é a daquela segunda noite: a ruta recortouse ao norte, o volante caeu á metade e o caderno gañou o que as guías adoitan perder polo camiño: tempo para mirar. Viaxar a Sardeña significa aceptar que o tempo non avanza aquí da mesma maneira. As estradas atravesan chairas onde os muros de pedra seca parecen tan antigos coma as montañas. Entre sobreiras, oliveiras bravas e matogueiras de lentisco xorden, case sen aviso, enormes torres ciclópeas levantadas hai máis de tres mil anos. Nas aldeas do interior aínda se escoitan variantes dunha lingua que sobreviviu a imperios, invasións e administracións sucesivas. O pan segue cocéndose segundo receitas transmitidas entre xeracións, e os pastores continúan coñecendo cada recuncho das serras como se o relevo formase parte da súa propia memoria.' },
+        { t: 'Un espello para Galicia',
+          x: 'Quizais por iso esta illa esperta unha familiaridade difícil de explicar para quen chega desde Galicia. Non porque as paisaxes sexan iguais, que non o son. O Mediterráneo nunca poderá confundirse co Atlántico. A luz tampouco. Nin o cheiro da vexetación. Pero existe unha forma semellante de entender o territorio, unha conciencia histórica construída arredor dunha identidade propia que resistiu durante séculos ás grandes estruturas políticas que gobernaron desde lonxe. Palabras que cambian de idioma pero conservan o mesmo significado emocional: terra, lingua, memoria, comunidade. Nós chegamos ademais cunha ferramenta que nos define: unha Mercedes Vito que xa peina canas. Sen teito elevable, sen baño, sen electricidade que vixiar, e cunha altura que non chega ao metro e oitenta. Esa aparente modestia é o noso mellor equipamento: entra onde as autocaravanas non caben, aparca onde outros dan voltas buscando sitio, e obriga a vivir a illa desde fóra cara a dentro. Despois de anos durmindo sobre rodas, sabemos que a furgo non é unha casa con rodas: é unha escusa perfecta para estar no mundo. Leva o imprescindible e descubres axiña que case todo o demais resulta accesorio.' },
+        { t: 'Un libro para mirar amodo',
+          x: 'Este libro nace desa intuición. Non pretende demostrar parentescos imposibles nin alimentar mitos románticos. Aspira simplemente a observar, a camiñar con calma, a mirar as pedras antes de fotografalas, a sentarse nunha praza antes de continuar conducindo, a preguntar polo nome dunha variedade de queixo ou polo significado dun topónimo escrito en galurés. Porque unha viaxe só empeza realmente cando deixamos de procurar aquilo que esperabamos atopar. Ao longo destas páxinas non atoparás unha lista interminable de imprescindibles, nin clasificacións artificiais, nin itinerarios deseñados para consumir o maior número posible de monumentos en menos tempo. Cada lugar aparecerá integrado nunha historia máis ampla, relacionada coa xeografía, coa cultura, coa gastronomía ou coa memoria das persoas que o habitan. O Nuraghe Santu Antine non será só unha impresionante construción megalítica; será tamén unha porta para comprender unha sociedade capaz de organizar comunidades complexas moitos séculos antes da chegada de Roma. Anghelu Ruju non será un conxunto de tumbas escavadas na rocha, senón unha conversa silenciosa coa morte durante o Neolítico, agora recoñecida pola UNESCO como Patrimonio da Humanidade. Alghero non quedará reducida ás súas murallas; será unha oportunidade para entender como unha lingua pode sobrevivir a séculos de administracións alleas. A paisaxe terá o mesmo protagonismo ca a historia. O granito esculpido polo vento en Capo Testa, os cantís calcarios de Capo Caccia, as praias de area branca da Pelosa, os bosques de sobreiras da Gallura, as augas transparentes do arquipélago da Maddalena ou a chaira ondulada da Nurra explican tanto sobre Sardeña como calquera documento escrito. O territorio nunca é un simple escenario: é un actor principal que condiciona a economía, a arquitectura, a alimentación e mesmo o carácter das comunidades humanas. A gastronomía ocupará tamén un lugar central, non como unha sucesión de restaurantes recomendados, senón como expresión dunha cultura. Cocemos a maior parte das comidas na furgo, si, pero hai días nos que un prato pide unha mesa: unha suppa cuata que sabe a granito, unha paella algherese que reivindica a súa orixe catalá, unhas navallas á brasa que só se entenden diante do mar que as criou. Este caderno dirache cales deses días merecen a pena, e cales non. Este libro está pensado para ser lido antes da viaxe, durante a viaxe e moito despois da viaxe. Quizais incluso sen intención de visitar nunca a illa. Porque os mellores libros de viaxes non dependen do destino: falan, sobre todo, da curiosidade humana e desa necesidade antiga de comprender o mundo camiñando.' }
+      ]
+    }, {
+      id: 'intro',
+      titulo: 'Introdución',
+      pistas: [
+        { t: 'Por que viaxar a Sardeña en furgoneta',
+          x: 'A decisión de embarcar unha furgoneta cara a Sardeña adoita sorprender a quen nunca percorreu a illa. Desde un mapa parece máis razoable instalarse nun único lugar e realizar excursións desde alí. A realidade, porén, desmente esa impresión inicial. Sardeña non é unha illa uniforme: é un mosaico de paisaxes, linguas locais, tradicións e xeoloxías que cambian continuamente ao longo da estrada. Non é a nosa primeira illa nin a nosa primeira travesía, e aínda así Sardeña conseguiu algo que non esperabamos: que discutísemos de mapas despois de cen noites durmindo en furgoneta. Nesta viaxe centraremos a atención no norte da illa, e mesmo ese ámbito reducido basta para demostrar a diversidade extraordinaria do territorio sardo. Nunha mesma xornada pódese abandonar unha costa de calcarias brancas, atravesar un bosque de sobreiras onde a cortiza vermella brilla entre os troncos e rematar contemplando enormes formacións graníticas moldeadas durante millóns de anos polo vento do estreito de Bonifacio. O norte non é unha rexión: é varias Sardeñas convivindo a poucos quilómetros de distancia. Percorrela en camper permite que esa diversidade se revele pouco a pouco, sen a presión dos horarios fixos nin a obriga de regresar cada tarde ao mesmo punto de partida. A estrada convértese nun espazo de transición, non nun simple desprazamento entre dous destinos. Cada quilómetro engade contexto ao seguinte, e esa continuidade fai posible comprender a illa como un todo, non como unha colección de postais illadas. Ese será o fío condutor desta viaxe. Non perseguiremos simplemente lugares fermosos. Procuraremos entender por que son así e que historias gardan entre as súas pedras.' },
+        { t: 'Galicia e Sardeña: dúas periferias que resisten',
+          x: 'É tentador establecer paralelismos rápidos entre Galicia e Sardeña. Ambos territorios conservan unha lingua propia. Ambos ocuparon durante séculos unha posición periférica respecto dos grandes centros de poder político. Ambos desenvolveron unha forte identidade colectiva e unha relación intensa coa terra. Pero as semellanzas interesantes non adoitan atoparse nas grandes afirmacións, senón nos pequenos detalles. O primeiro que chama a atención é a maneira de habitar o territorio. En Galicia, a paisaxe construíuse historicamente mediante unha infinidade de pequenas explotacións agrícolas, aldeas dispersas e unha rede case infinita de camiños que unen lugares aparentemente insignificantes. Sardeña presenta unha organización distinta, condicionada por un clima máis seco e por unha tradición pastoril moito máis marcada, pero comparte esa sensación de que o país verdadeiro non sempre coincide coas cidades máis grandes. A identidade profunda adoita agocharse no interior, nos vales, nas serras e nas pequenas vilas onde a memoria segue transmitíndose de xeración en xeración. Tamén existe unha experiencia histórica común: vivir durante séculos baixo poderes establecidos noutros lugares. Sardeña foi gobernada sucesivamente por fenicios, cartaxineses, romanos, vándalos, bizantinos, pisanos, xenoveses, aragoneses, españois e finalmente polo Reino de Italia. Cada etapa deixou pegadas visibles na arquitectura, na lingua, na organización do territorio e mesmo na alimentación. Mais ningunha conseguiu borrar completamente o substrato anterior. Quizais por iso, cando un galego percorre as estradas do norte sardo, resulta difícil evitar unha certa sensación de recoñecemento. Non porque os lugares sexan iguais, senón porque existe unha forma semellante de comprender o valor da memoria. Naturalmente, tamén existen diferenzas profundas. Galicia medrou mirando ao Atlántico. A chuvia, os ríos abundantes e os bosques húmidos condicionaron a súa economía e o seu imaxinario. Sardeña, pola contra, aprendeu a convivir coa escaseza de auga durante boa parte do ano. O vento, a pedra e a seca modelaron unha paisaxe completamente distinta. E precisamente aí reside unha das grandes riquezas da viaxe: descubrir que pobos con experiencias históricas comparables poden producir culturas profundamente orixinais. A viaxe convértese así nun espello onde tamén acabamos observando aspectos do noso propio país.' },
+        { t: 'Un libro para viaxar amodo',
+          x: 'O percorrido que imos realizar circunscríbese ao norte da illa. Sete xornadas completas, máis a mañá de saída. A condución do percorrido base manterase arredor da hora e media diaria, e ningún día supera as dúas horas sen contar opcións. Esta decisión non é unha renuncia: é unha elección consciente, tomada aquela noite de inverno na que a ruta enteira caeu pola súa propia imposibilidade. Neste caso escollemos un equilibrio particular. As etapas están deseñadas para permitir descubrir as distintas paisaxes do norte sardo sen converter a condución no verdadeiro protagonista da xornada. Haberá días dedicados á arqueoloxía máis antiga, outros marcados pola paisaxe costeira, algúns que permitirán comprender mellor a identidade contemporánea dos sardos e outros que servirán simplemente para contemplar o mar desde unha pequena cala ou para compartir unha comida fronte ao estreito de Bonifacio. Cada xornada funciona como un plan a máximos: propoñemos varias actividades, claramente xerarquizadas. O esencial do día sempre estará indicado. O complementario aparecerá como unha opción para quen dispoña de máis tempo ou enerxía. E cada capítulo sinalará tamén que se pode descartar sen que a xornada perda o seu sentido. Deste xeito a guía non xera ansiedade, senón que invita a escoller con criterio. Viaxar tamén consiste en saber que non todo pode facerse, e que iso non é un fracaso.' },
+        { t: 'Feitos, interpretacións e valoracións',
+          x: 'Unha guía que pretende acompañar de verdade ao viaxeiro debe ser honesta sobre o tipo de verdade que ofrece en cada parágrafo. Nesta edición distinguimos tres capas, e o lector atopará sempre marcas claras de cada unha. A primeira é a dos feitos con amplo consenso: cronoloxías, estratigrafías, contas de chanzos, alturas de cantís, normas de acceso. Preséntanse directamente, sen adornos: a torre central elévase máis de dezasete metros, a Escala do Cabirol ten seiscentos cincuenta e catro chanzos, a reserva da Pelosa é obrigatoria entre o quince de maio e o quince de outubro. A segunda é a das interpretacións arqueolóxicas e históricas debatidas. Aquí o texto emprega fórmulas explícitas: segundo a interpretación máis aceptada, a historiografía actual sitúa, a tradición apunta. Cando os especialistas discuten, a guía non elixe en segredo: mostra o debate. A terceira é a das valoracións editoriais. Cando dicimos que un lugar nos parece un dos máis fermosos ou que unha estrada é unha das grandes rutas panorámicas de Europa, estamos asinando unha opinión, non ditando un dato. Estas valoracións mantéñense, porque son parte da voz do libro, pero aparecen sempre como o que son: unha mirada, non unha sentenza. O texto non perde forza: gaña confianza.' },
+        { t: 'A Vito como casa provisional',
+          x: 'Poucos espazos obrigan a reflexionar tanto sobre o realmente necesario como unha furgoneta pequena. A nosa non ten case nada do que a publicidade camper considera imprescindible: nin teito elevable, nin baño, nin electricidade que administrar. Ten, en cambio, o único que de verdade importa: unha porta que se abre ao mundo e dous que xa saben o que fan dentro dela. Despois de anos durmindo sobre rodas, as rutinas xa non se discuten: un abre a porta e le o ceo; o outro esperta a cafeteira. Un escribe o caderno; o outro negocia cinco minutos máis de sono. A casa deixa de ser un edificio fixo e transfórmase nun conxunto de xestos coñecidos. Preparar o café mentres amence. Dobrar a mesa despois do almorzo. Escoller a froita comprada no mercado da véspera. Son xestos aparentemente insignificantes, pero acaban marcando o ritmo da viaxe con tanta forza como os grandes monumentos. Existe tamén unha dimensión emocional difícil de explicar. Cando a furgoneta se converte no fogar durante varios días, a relación co territorio cambia completamente. Non se trata de regresar ao hotel despois dunha excursión, senón de vivir continuamente inmerso na paisaxe. O mar que escoitamos pola noite será o mesmo que veremos ao abrir os ollos pola mañá. O cheiro dos piñeirais acompañaranos mentres cociñamos. A dirección do vento condicionará onde sentarnos para cear. Viaxar así require unha certa disposición para aceptar o inesperado. Non todo sairá exactamente como estaba previsto. Lonxe de constituír un problema, esas desviacións adoitan conducir aos momentos máis recordados dunha viaxe. Unha tarde en que a Pelosa pechou por vento acabamos descubrindo Cala Lupo; unha escavadora nun aparcadoiro levounos ata o mellor solpor da semana. A Vito non ten GPS que atope eses recunchos: temos nós.' },
+        { t: 'Como utilizar este libro',
+          x: 'Cada capítulo corresponde exactamente a unha das xornadas da ruta prevista entre o vinte e oito de agosto e o catro de setembro de dous mil vinte e seis. A narración seguirá a orde cronolóxica do percorrido, escrita a dúas voces: ás veces fala un, ás veces o outro, ás veces os dous á vez. O lector poderá avanzar ao mesmo ritmo que a viaxe, compartindo as primeiras impresións de cada lugar antes de recibir a explicación histórica ou arqueolóxica correspondente. Cada xornada ábrese cunha ficha de decisión: quilómetros e condución reais, visita principal e tempo de visita, reservas necesarias, mellor hora, dificultade, carga loxística, e as dúas opcións de pernocta da noite, unha con servizos, outra máis libre. A ficha non substitúe a narración: é o seu mapa de uso. A gastronomía aparece de dúas maneiras. A cotiá, na furgo: mercados, pequenas queixerías, panadarías e produtores que abastecen a nosa despensa rodante. E a excepcional, no bloque se se come fóra: cando unha comarca ten un prato que paga a pena sentarse a comer, dicímolo con claridade, con rango de prezo e con opcións para quen come ovo-lácteo e bivalvos, que é o noso caso. Este libro non pretende responder todas as preguntas. Pola contra, aspira a provocar moitas máis. Porque unha boa viaxe non remata cando o ferry abandona Porto Torres: continúa moito tempo despois, cando unha fotografía desperta un recordo, cando un aroma semellante ao do mirto aparece por sorpresa nun paseo ou cando unha lectura sobre o Mediterráneo fai regresar, sen previo aviso, a luz dourada dunha tarde en Capo Caccia. Dentro duns minutos, o barco reducirá velocidade. A costa norte de Sardeña aparecerá definitivamente diante de nós. A travesía polo mar Tirreno estará chegando ao seu final. A verdadeira viaxe, porén, aínda non comezou.' }
+      ]
+    }, {
+      id: 'dia1',
+      titulo: 'Capítulo I · Día 1 · A chegada',
+      pistas: [
+        { t: 'A cuberta',
+          x: 'Ti espertas co primeiro cambio de ritmo do barco, nunca coa alarma. É algo que aprendín a recoñecer en todos estes anos: o teu corpo ten un sexto sentido para as maniobras de porto. Eu, en cambio, necesito que o Mediterráneo me empuxe dúas veces contra a parede da litera antes de aceptar que o día comezou. Pouco antes das nove, a cuberta xa está chea. A maioría leva un bo anaco esperta: hai quen sostén un café de máquina mirando a liña escura da costa, quen busca coa cámara o primeiro perfil recoñecible da illa, familias que intentan convencer os nenos de que esa mancha gris no horizonte é realmente terra firme. Os viaxeiros veteranos permanecen en silencio. Saben que os últimos quilómetros dunha travesía marítima sempre teñen algo de cerimonial. Nós estamos entre os veteranos, aínda que hoxe coa emoción dos primeiros. Abrimos o caderno na baranda e anotamos a primeira liña do día: Sardeña cheira a sal e a diésel. Ti corriges: cheira a sal, a diésel e a café requentado. Tamén por iso te quero: ninguén máis me baixa os pés da lírica con tan boa puntería. O barco avanza lentamente cara ao amplo porto de Porto Torres. Á esquerda distínguense as instalacións industriais que recordan que esta cidade continúa sendo un dos principais centros loxísticos do norte da illa. Máis aló aparecen os peiraos comerciais, as guindastres, as longas explanadas onde dentro duns minutos centos de vehículos agardarán a autorización para desembarcar. A primeira impresión podería resultar decepcionante para quen espera unha chegada espectacular. Porto Torres non intenta seducir mediante unha fachada monumental. A súa beleza non é inmediata nin evidente. É unha cidade que cómpre comprender antes de xulgala. E precisamente por iso tomamos, antes de saír de Galicia, unha decisión que daquela parecía estraña e que agora, coa illa diante, soa evidente: hoxe non a visitaremos.' },
+        { t: 'A chegada que agarda',
+          x: 'Hoxe non paramos, lembraches ti, co billete do ferry das seis da mañá do día catro dobrado no peto da camisa, coma un talismán. E tiñas razón. O ferry volverá deixarnos neste mesmo peirao dentro de sete días, cando aínda sexa noite pechada. Non ten sentido percorrer agora a cidade con présa, co cansazo da travesía e a ansiedade do primeiro día. Porto Torres merece outra calma: a de quen xa fixo o camiño. Gardámola para a última tarde, e o círculo pecharase mellor así. Esta decisión, que na cociña de Galicia nos pareceu un capricho de planificación, é en realidade a primeira lección da viaxe: saber que un lugar pode agardar, e que agardar tamén é unha forma de respectalo. A megafonía anuncia o desembarco. As portas da adega ábrense lentamente e a longa columna de vehículos ponse en marcha. A Vito abandona o interior do barco entre un rumor de motores diésel, bicicletas suxeitas na parte traseira e autocaravanas procedentes de media Europa, moitas delas enormes, con toldos e antenas que parecen presumir. A nosa, coa súa altura de menos dun metro e oitenta, pasa discreta entre elas. Na fila, un controlador míranos e pregunta se somos camper. Ti respondes, sen pestanexar, que somos unha furgo pequena con grandes intencións. O home ri e ábrenos paso. A altura da Vito, que durante anos nos pareceu unha limitación, é aquí a primeira vantaxe: pasa por barras de aparcadoiro e rúas onde as autocaravanas quedan fóra, e esa modestia vai salvarnos máis dunha tarde. As primeiras rotondas obrigan a reducir a velocidade. Non hai présa. No mapa, o día ten tres nomes escritos: Accoddi, entre parénteses, porque depende do reloxo; Santu Antine; e Castelsardo. E entre eles, unha chaira que nos ensinará, antes ca ningún monumento, a mirar esta illa.' },
+        { t: 'Monte d\'Accoddi',
+          x: 'A decisión tómase na primeira gasolineira, co mapa sobre o capó e dous cafés de máquina que saben a vitoria. Se chegamos antes das dez e media, Accoddi, dis ti. Se non, promesa do Día sete, respondo eu. Apertámonos a man coma dous nenos que pechan un trato. O reloxo di que si. O desvío está na antiga estrada nacional, entre Porto Torres e Sassari, nun treito que a maioría dos viaxeiros percorre sen saber que, a poucos metros do asfalto, agarda un dos monumentos máis singulares de todo o Mediterráneo occidental. O aparcadoiro é discreto. O primeiro que se ve é unha elevación suave, case unha lomba galega, coroada por unha masa de pedra que non se parece a nada do que vimos ata agora. Monte d\'Accoddi non é un nuraghe. É algo anterior, e nesa anterioridade reside boa parte do seu valor: un complexo ceremonial do cuarto e terceiro milenio antes da nosa era, construído polas comunidades do Neolítico Final e do Calcolítico, máis de mil anos antes de que os nuráxicos erguesen as súas torres. Segundo a interpretación máis aceptada, o lugar tivo dúas grandes fases: un primeiro santuario, asociado á cultura de Ozieri, e unha reconstrución posterior, vinculada ás culturas do Calcolítico como a de Abealzu, que lle deu a forma escalonada que hoxe vemos. A comparación que vén á cabeza de case todo o que se pon diante dela é inevitable: un zigurat. Unha plataforma troncopiramidal cunha rampla de acceso duns vinte e cinco metros que sobe cara ao que foi un lugar de culto elevado. Convén ser honestos: a semellanza coas estruturas mesopotámicas é unha analoxía visual e interpretativa, non unha proba de contacto entre mundos. Ningún dato serio afirma que os construtores de Accoddi coñecesen o Oriente Próximo. O que a comparación si permite é intuír algo máis fondo: que determinadas formas, unha montaña artificial, unha rampla, un altar no alto, aparecen en culturas sen relación entre si porque responden a preguntas semellantes. Como subir cara ao que se considera sagrado.' },
+        { t: '📦 Caixa · Accoddi', caixa: 1,
+          x: 'O primeiro santuario estivo cuberto cunha capa de ocre vermello, o que lle valeu o nome de templo vermello entre quen o estuda: o vermello, unha vez máis, como cor da vida. Xunto á rampla aparecen un menhir de case cinco metros e grandes bloques calizos, entre eles unha mesa con sucos que a tradición chamou de sacrificio; a súa función exacta continúa debatida, e convén contala como hipótese, non como sentenza. O estudo sistemático do sitio arrincou nos anos cincuenta do século vinte, cando as obras dunha estrada sacaron á luz materiais que alertaron os arqueólogos: tamén aquí, coma en Anghelu Ruju, foi o azar quen abriu a porta. Accoddi non é unha tumba nin unha fortaleza: é un lugar de encontro, de lume e de cerimonia. Mirándoo ben, é o primeiro lugar de romaría da illa: seis mil anos antes de que ninguén escribise a palabra.' },
+        { t: 'Cara á chaira da Nurra',
+          x: 'Abandonar Porto Torres leva apenas uns minutos, e a cidade queda atrás polo retrovisor coa mesma discreción coa que nos recibiu. A luz da mañá aínda conserva unha suavidade que desaparecerá dentro dun par de horas, cando o sol de finais de agosto comece a caer verticalmente sobre a chaira. A primeira sensación para quen chega desde Galicia é a da amplitude. Non hai montañas que pechen a perspectiva nin vales profundos que fragmenten o territorio. A Nurra esténdese coma un inmenso taboleiro ondulado onde alternan campos de cereal xa colleitado, pastos secos, pequenas plantacións de oliveiras e grandes manchas de sobreiras. Aquí e acolá aparecen figueiras de Indias formando sebes naturais, e entre elas as siluetas esveltas dos cipreses marcan a presenza dunha casa ou dunha pequena explotación agrícola. O verde intenso ao que está afeito o ollo galego deixa paso a unha paleta completamente distinta: ocres, dourados, verdes agrisados e tons avermellados mestúranse nunha paisaxe que semella construída coa mesma materia que a luz. É unha beleza menos inmediata, máis austera, máis lenta. Hai que concederlle tempo. Paramos nunha área de descanso pequena, sen nome, coa desculpa de que a Vito tamén ten dereito a un café. En realidade o café é para nós e a parada é para o cheiro. Baixo as sobreiras, a mestura de resina, herbas secas, terra quente e follas esmagadas polo sol é un perfume antigo, profundamente mediterráneo. Ti pechas os ollos e dis, coa túa manía de resumir as cousas ata deixalas en óso: isto é o que cheira cando o sol traballa. Anótoo no caderno. Algunhas frases non son miñas; son túas, e esta vai dereita ao libro.' }
+      ]
+    }, {
+      id: 'dia2',
+      titulo: 'Capítulo II · Día 2 · Os xigantes e o granito',
+      pistas: [
+        { t: 'A despedida de Castelsardo',
+          x: 'Espertar co golfo da Asinara diante da ventá é unha desas pequenas recompensas que só ofrece a viaxe en furgoneta. A luz da mañá entra horizontal, o aire conserva unha frescura que desaparecerá ao mediodía, e o café sabe a comezo de día. Hoxe cheira a granito, dis ti antes de terminar o primeiro grolo. Aínda non sabes canto razón tes. A Vito sae do seu oco sen queixarse; a porta corrediza segue pedindo o seu golpe de xeonllo, ese xesto que xa forma parte do noso idioma privado. Antes de enfilar a estrada, unha última mirada cara ao castelo. Onte chegabamos a el como viaxeiros cansos dun ferry; hoxe marchamos del coa sensación de que a illa comeza a abrirse, capa a capa, coma un libro que se le amodo. A etapa de hoxe é curta en quilómetros e rica en paisaxes, exactamente o tipo de xornada para a que foi deseñada esta ruta. Non hai présa por marchar: o leste agarda cun cambio de materia.' },
+        { t: 'A Tomba dei Giganti di Coddu Vecchiu',
+          x: 'Abandonamos novamente o mar, só por un intre. Poucos quilómetros cara ao interior agárdanos un lugar que nos devolve, unha vez máis, á Sardeña de hai máis de tres mil anos. A estrada atravesa unha paisaxe dominada polo granito; entre sobreiras e matogueiras mediterráneas aparece discretamente un pequeno aparcadoiro. Nada anuncia a importancia do lugar. Como sucede con tantos monumentos nuráxicos, a monumentalidade non busca impresionar desde a distancia: hai que achegarse, camiñar uns minutos e deixar que a arquitectura apareza lentamente. E entón aparece. A primeira visión da Tomba dei Giganti di Coddu Vecchiu resulta inesquecible. A gran estela central érguese diante de nós coma unha inmensa porta de pedra. Supera os catro metros de altura e está tallada nun único bloque granítico. O seu perfil, elegantemente curvado, destaca sobre o ceo. Á súa beira, outras grandes laxes forman un amplo semicírculo: é a chamada exedra, un espazo pensado para reunir persoas, para celebrar rituais, para despedir aos mortos. Non estamos diante dunha tumba individual. As tumbas dos xigantes eran enterramentos colectivos. Durante xeracións, os membros dunha mesma comunidade compartiron este espazo funerario. A morte non se entendía como un acontecemento exclusivamente privado: formaba parte da vida colectiva. A cámara funeraria esténdese detrás da gran estela mediante un longo corredor construído con enormes bloques de pedra. O conxunto supera os dez metros de lonxitude. Hoxe permanece baleiro: os enxovais e restos humanos recuperados durante as escavacións atópanse conservados en museos. Mais a ausencia de obxectos facilita curiosamente outra forma de observación: podemos concentrarnos na arquitectura, na precisión coa que cada pedra foi colocada, na relación entre espazo, cerimonia e paisaxe. Os arqueólogos sitúan este tipo de monumentos no período de maior desenvolvemento da civilización nuráxica, aproximadamente entre os séculos quince e nove antes da nosa era, con fases construtivas anteriores nalgúns casos. A interpretación máis aceptada considéraos espazos funerarios colectivos vinculados ao culto dos antepasados. A gran exedra situada diante da cámara suxire que as cerimonias non se desenvolvían exclusivamente no interior: a comunidade reuníase diante do monumento, e probablemente celebrábanse ritos relacionados coa memoria dos mortos, coa identidade do grupo e coa continuidade entre xeracións. Os devanceiros seguían formando parte da comunidade: custodiaban o territorio, lexitimaban a ocupación da terra e garantían simbolicamente a continuidade da vida colectiva.' },
+        { t: '📦 Caixa · Coddu Vecchiu', caixa: 1,
+          x: 'O nome é popular, non arqueolóxico: tumba dos xigantes naceu da crenza de que naquelas cámaras enormes só podían repousar xigantes. O tamaño das pedras fixo o resto da lenda. Na base da gran estela hai un pequeno burato. A interpretación máis estendida léao como unha porta simbólica: por el, os vivos depositarían ofrendas para os mortos sen necesidade de abrir a cámara. Unha fenda entre dous mundos. A exedra funciona coma un pequeno teatro: a disposición das laxes suxire asembleas, rituais compartidos, quizais comidas cerimoniais. A morte, aquí, tamén era un asunto de comunidade.' },
+        { t: 'Costa Smeralda',
+          x: 'Hai nomes que parecen existir desde sempre. Costa Smeralda é un deles. Por iso sorprende descubrir que, en realidade, se trata dunha denominación moderna. Ata comezos da década de mil novecentos sesenta, este tramo da costa nordeste chamábase Monti di Mola: unha rexión relativamente pouco habitada onde pequenas comunidades de pescadores, pastores e agricultores compartían un territorio de extraordinaria beleza que apenas figuraba nos itinerarios turísticos internacionais. O granito, o vento, as pequenas calas, as augas transparentes: todo estaba xa aquí. Faltaba quen decidise converter esa paisaxe nun destino mundial. A historia cambia radicalmente a comezos da década de mil novecentos sesenta, cando Karim Aga Khan o cuarto, durante unha viaxe por estas costas, comprende que a beleza da paisaxe era comparable ás mellores zonas costeiras do Mediterráneo, pero permanecía practicamente intacta. A partir daquela intuición nace, en mil novecentos sesenta e dous, o Consorcio Costa Smeralda, coa vontade de desenvolver un destino turístico de luxo sen reproducir os modelos masivos que comezaban a estenderse por outras rexións mediterráneas. Cando se percorre hoxe a Costa Smeralda chama a atención un detalle: as edificacións apenas sobresaen. Non existen grandes torres fronte ao mar. Os edificios permanecen relativamente baixos, empregan materiais tradicionais, cubertas discretas, muros encalados, cores que buscan integrarse na contorna. Boa parte destas decisións responden ao traballo dos arquitectos do primeiro consorcio, que ensaiaron aquí unha arquitectura capaz de dialogar coa paisaxe, non de competir con ela. Pode discutirse o resultado, pero resulta innegable que a Costa Smeralda presenta unha integración territorial moi distinta da observada noutras áreas intensamente urbanizadas do Mediterráneo.' }
+      ]
+    }, {
+      id: 'dia3',
+      titulo: 'Capítulo III · Día 3 · O arquipélago',
+      pistas: [
+        { t: 'O porto e a vantaxe da altura',
+          x: 'Aínda non amenceu completamente cando espertamos en Palau. O porto atópase a poucos minutos. Non hai présa, pero tampouco convén demorarse: as primeiras travesías da mañá adoitan ser as máis tranquilas, e navegar cedo permite descubrir o arquipélago antes de que aumente a afluencia de embarcacións privadas e o sol comece a apertar. Aquí é onde a nosa Mercedes Vito demostra por que é a ferramenta perfecta para esta illa. Mentres as autocaravanas de máis de dous metros de altura teñen que conformarse cos aparcadoiros disuasorios das aforas e camiñar ata a terminal co peso da mochila, nós buscamos un oco nas rúas intermedias do porto. Unha barreira de altura dun metro e noventa non é un obstáculo para a nosa furgo; pasamos por baixo e aparcamos a dous minutos a pé da rampla de embarque. A altura da Vito, que noutros contextos podería parecer unha limitación, é en Sardeña a nosa mellor credencial: permítenos usar prazas de coche, parkings subterráneos e rúas estreitas onde o mundo camper non cabe. No peirao, a actividade xa comezou. O barco non une un continente cunha illa; une unha illa con outras illas. Aquí o mar funciona como unha estrada máis.' },
+        { t: 'La Maddalena e Caprera',
+          x: 'O ferry atraca suavemente e a primeira impresión sorprende. Quen espera unha pequena illa exclusivamente turística descobre unha auténtica vila. La Maddalena posúe vida propia durante todo o ano: escolas, administración, comercios, prazas, mariñeiros. As fachadas de cores suaves descenden cara ao porto formando un conxunto urbano agradable, sen excesos monumentais. Resulta recomendable percorrer inicialmente o centro histórico a pé, sen rumbo fixo. Entrar nas pequenas rúas onde a roupa tende entre balcóns, onde o cheiro do café acaba mesturándose co das panadarías que comezan a sacar as primeiras fornadas. Non hai nada extraordinario nesa escena, e precisamente por iso resulta valiosa: o arquipélago non é só unha postal de augas turquesas; é tamén un lugar onde a vida continúa durante todo o ano, cando os ferris de agosto deixan de chegar. Desde La Maddalena, unha estreita ponte une ambas illas. Atravesámola lentamente e a paisaxe cambia case sen decatarnos. Caprera conserva un carácter moito máis salvaxe: a presenza humana diminúe, os piñeirais e os afloramentos graníticos recuperan o protagonismo. Existe unha figura histórica inevitablemente asociada a esta illa: Giuseppe Garibaldi. O militar e político que desempeñou un papel fundamental no proceso de unificación italiana pasou os últimos anos da súa vida en Caprera. A súa residencia, convertida hoxe en museo, conserva numerosos obxectos persoais. Garibaldi escolleu esta illa buscando precisamente aquilo que hoxe segue ofrecendo: illamento relativo, contacto coa natureza, un ritmo de vida afastado das grandes cidades. Resulta curioso pensar que un dos protagonistas da historia política europea do século dezanove rematase os seus días cultivando a terra e navegando entre estas pequenas illas. Non escolleu un palacio; escolleu granito e vento.' }
+      ]
+    }, {
+      id: 'dia4',
+      titulo: 'Capítulo IV · Día 4 · O corazón de granito',
+      pistas: [
+        { t: 'Tempio Pausania',
+          x: 'A primeira impresión de Tempio sorprende a quen só coñece a Sardeña costeira. Non hai praias, non hai portos, non hai terrazas mirando ao mar. Hai, en cambio, unha vila elegante e serena, construída case enteiramente en granito: as fachadas grises e rosadas, os portais escuros, as prazas amplas, a catedral erguida coa mesma pedra que domina os montes próximos, o monte Limbara. Tempio vive de costas ao turismo costeiro, e precisamente por iso conserva unha autenticidade que as vilas da costa perderon en parte. O centro histórico percorrese a pé e sen présa. A catedral de San Pedro, coa súa fachada de granito e o seu campanario robusto, funciona como punto de referencia. Ao redor, pequenos comercios, cafés con mesas na rúa, edificios señoriais que lembran tempos de prosperidade agrícola e gandeira. Tempio foi durante séculos un lugar de mercados, de notarios, de familias que acumulaban terras e rabaños nos stazzi, as grandes explotacións agropastoris da Gallura, moi distintas ao minifundio galego, baseadas na dispersión e na autosuficiencia.' },
+        { t: 'Valle della Luna e Izzana',
+          x: 'Ao oeste de Tempio, a estrada sobe cara a Aggius e a chamada Valle della Luna, ou Piana dei Grandi Sassi. O nome non é unha exageración publicitaria: os enormes bolos de granito, erosionados durante millóns de anos, crean un relevo de formas redondeadas e grises que, baixo determinada luz, parece realmente pertencer a outro mundo. Camiñar entre esas pedras, co silencio só roto polo vento e polas cigarras, é unha das experiencias máis puramente xeolóxicas da viaxe. E alí, integrándose case camaleonicamente coas rochas, agarda o Nuraghe Izzana. Na nosa ruta xa vimos o basalto negro de Santu Antine e o granito rosa das tumbas dos xigantes. Izzana é o exemplo perfecto de como os nuráxicos adaptaban a súa arquitectura á pedra que tiñan a man. O granito é moito máis difícil de tallar e modelar ca o basalto ou a calcaria. Por iso, os bloques de Izzana son máis irregulares, máis bravos. Mais ao entrar na súa cámara e mirar cara arriba, a tholos, a falsa cúpula, segue alí, desafiando a gravidade e o tempo, cunha acústica que fai que o noso propio respirar soe a bronce antigo.' },
+        { t: 'Saccargia',
+          x: 'A media tarde, a ruta pon rumbo decidido ao oeste, cara a Sassari. E entón, nunha curva da antiga estrada, a paisaxe abre unha xanela e aparece. A Santissima Trinità di Saccargia emerxe no medio dunha chaira verde coma un espellismo bicromo. Ata agora, a nosa viaxe pasou da prehistoria nuráxica ás cidades fenicias e romanas, e logo ás murallas aragonesas e catalás. Faltaba unha peza: a Idade Media, o tempo dos Giudicati, os catro reinos sardos independentes, e a influencia das repúblicas mariñeiras italianas. Saccargia é esa peza. É, probablemente, a igrexa románica máis fermosa e coñecida de toda Sardeña. A súa fachada é un xogo hipnótico de franxas: pedra calcaria branca e basalto negro volcánico. Esta técnica, típica do románico pisano e toscano, demostra que no século doce Sardeña non estaba illada, senón que dialogaba arquitectonicamente coa Toscana e con Pisa. Os monxes camaldulenses que a habitaron trouxeron consigo as formas do continente, pero a luz e o vento da illa déronlle un carácter único.' }
+      ]
+    }, {
+      id: 'dia5',
+      titulo: 'Capítulo V · Día 5 · As casas das fadas',
+      pistas: [
+        { t: 'Anghelu Ruju',
+          x: 'O primeiro de setembro amance cunha luz lixeiramente distinta á de agosto. Quizais sexa só unha impresión, pero hai algo máis suave no aire, unha transparencia que anuncia o cambio de mes. Ti espertas antes ca min e abres a porta da Vito sen facer ruído, coma se a illa aínda dormise e non quixeses espertala. O café sae co primeiro sol. Setembro, dis ti, coma quen asina un documento. E eu anoto no caderno: setembro, o mes no que a luz baixa medio ton e as praias respiran. A furgoneta percorre poucos quilómetros esta mañá: o destino agarda moi preto de Alghero, nun outeiro calcario rodeado de vexetación mediterránea que, visto desde a estrada, non anuncia nada extraordinario. O verdadeiro monumento permanece oculto baixo os nosos pés. Hai lugares que non impresionan pola monumentalidade, senón pola intimidade. Despois da poderosa presenza de Santu Antine e das grandes estelas da Gallura, a visita a Anghelu Ruju obriga a cambiar completamente de mirada. Xa non buscamos unha arquitectura levantada cara ao ceo; agora descendemos cara á terra. Porque aquí os mortos vivían baixo terra.' },
+        { t: 'L\'Alguer',
+          x: 'Ao abandonar a necrópole, a luz exterior sorprende de novo. O sol está xa alto e as pedras brancas reflicten unha claridade intensa. O silencio do mundo subterráneo queda atrás, pero acompáñanos durante un bo anaco de estrada. Poucos quilómetros máis adiante agárdanos unha cidade onde a historia tomou outro camiño. Un lugar no que, durante séculos, o catalán conviviu co sardo, e onde as murallas miran ao Mediterráneo lembrando un pasado compartido coa antiga Coroa de Aragón. Hai cidades que se recoñecen antes de atravesar as súas portas. Alghero é unha delas. Antes de entrar aparece o longo paseo marítimo, bordeado por palmeiras, terrazas e pequenas embarcacións de recreo. É unha imaxe agradable, pero non convén quedar nela. O verdadeiro corazón de Alghero permanece detrás das antigas murallas. E aquí a Vito volve demostrar por que é a ferramenta perfecta: mentres as autocaravanas dan voltas buscando un oco imposible, nós entramos nun parking con barra de altura dun metro e oitenta, aparcamos a dous minutos a pé dunha das portas da muralla e cruzamos o umbral coma quen leva vivindo aquí toda a vida. Ao cruzar unha das portas da muralla prodúcese unha pequena ruptura temporal. O ruído do tráfico desaparece, a pedra substitúe ao asfalto, as rúas fanse máis estreitas e as fachadas proxectan sombra. O aire cambia: cheira a sal, a pedra quente, ao café acabado de moer, ao pan que sae dun forno, á roupa tendida entre balcóns. Poucas cidades conservan unha atmosfera tan claramente mediterránea.' }
+      ]
+    }, {
+      id: 'dia6',
+      titulo: 'Capítulo VI · Día 6 · O abismo e a auga',
+      pistas: [
+        { t: 'Capo Caccia',
+          x: 'A mañá do dous de setembro comeza coa Vito enfilando a estrada cara ao norte. É unha estrada que pide ser conducida coa ventá baixada. Á dereita, o Mediterráneo acompaña a marcha cun azul case metálico; á esquerda, as ondulacións calcarias anuncian que a xeoloxía volve tomar o mando. A nosa furgo, co seu motor diésel de vella escola, sobe sen queixarse as curvas que levan ata o faro de Capo Caccia. Aquí arriba, o aparcadoiro é un campo de batalla para os vehículos grandes. As autocaravanas de máis de sete metros teñen que deixar o vehículo moi atrás e camiñar. A Vito, co seu menos dun metro e oitenta e a súa batalla curta, colase nun oco xunto a unha varanda, a poucos pasos do abismo. É a nosa pequena vitoria diaria contra a xigantía do mundo camper. O que temos diante non é simplemente un cantil. É un muro de cento oitenta metros de calcaria que cae a pico sobre o mar. Pero para entender Capo Caccia hai que pechar os ollos e viaxar cento cincuenta millóns de anos atrás, ao Cretácico. Entón, isto non era unha montaña: era o fondo dun mar cálido e pouco profundo onde se acumulaban cunchas, corais e esqueletos microscópicos. A tectónica de placas empuxou ese fondo mariño cara ao ceo, e a choiva, armada cunha paciencia infinita e un pouco de dióxido de carbono, comezou a baleiralo por dentro. Así nace o karst. Así nace a Grotta di Nettuno.' },
+        { t: 'A Pelosa',
+          x: 'Chegamos á contorna de Stintino a media tarde. E aquí convén ser moi claros e honestos co que significa visitar a praia da Pelosa hoxe en día. Esta non é unha praia á que se poida chegar, estender a toalla e quedar a durmir. Entre o quince de maio e o quince de outubro, o acceso está estritamente regulado: mil cincocentas prazas diarias, reserva obrigatoria con semanas de antelación, código QR persoal, tarifa de tres euros e cincuenta e unha serie de normas inegociables: esterilla propia, prohibido fumar, prohibido levar area adherida ás toallas ou chanclas, obrigatorio enxugar os pés antes de marchar. Se fixestes os deberes en Galicia e tedes o QR no móbil, a experiencia é maxestuosa. A area é dun branco case neve, a auga é unha piscina natural de tons esmeralda e a Torre Aragonesa, construída no século dezaseis para vixiar a chegada dos corsarios berberiscos, recórtase sobre o illote fronte á praia. Pero a beleza da Pelosa é tan fráxil coma o seu ecosistema, e a masificación dos anos anteriores puxo en perigo a súa supervivencia. As normas non son un capricho burocrático: son o único escudo que lle queda á area.' }
+      ]
+    }, {
+      id: 'dia7',
+      titulo: 'Capítulo VII · Día 7 · O peche do círculo',
+      pistas: [
+        { t: 'A mañá que non pide nada',
+          x: 'Hai mañás que non piden nada, e esta é unha delas. Espertamos na contorna de Stintino coa sensación estraña de que o día non ten monumentos agardando. Non os necesita. Despois de sete xornadas nas que cada hora tivo un destino, o corpo agradece unha mañá sen plano: un café sen présa, un paseo curto, talvez un último baño se a Pelosa quedou pendente onte, ou simplemente un banco diante do mar co caderno aberto. Ti miras o mapa co café na man e fas a pregunta que levamos días adiando: quedounos algo pendente? E si, quedan as promesas pequenas, esas que esta guía chama micro-extensións e que nós chamamos débedas de amor. Se o ferry do primeiro día non nos deu a hora, Monte d\'Accoddi segue agardando na antiga estrada coa súa rampla de vinte e cinco metros. Se o corpo dixo que non o día da Gallura, Saccargia continúa erguendo as súas bandas bicromas no medio da chaira verde. E se non queda ningunha das dúas, a torre de Abbacurrente ofrece un último saúdo ao mar sen case desviarse.' },
+        { t: 'Porto Torres',
+          x: 'Pouco despois do mediodía, Porto Torres aparece no horizonte coa súa mestura característica de peiraos, grúas e casas baixas. Entramos na cidade coa sensación de quen regresa a un lugar que deixara deliberadamente para o final. E así é: esta era a única cidade da ruta que decidimos non visitar ao chegar. Aquela decisión, tomada antes de embarcar en Galicia, parecía entón unha simple precaución loxística. Agora, ao atravesar as súas rúas, compreendemos que foi algo máis: foi unha forma de respecto. Porque Porto Torres non é unha cidade para ser vista con présa e cansazo, ao comezo dunha viaxe. É unha cidade para ser escoitada ao final, cando o corpo xa aprendeu o ritmo da illa e o ollo xa sabe mirar. Moito antes de que existise Porto Torres, este punto da costa era xa un dos lugares máis importantes do Mediterráneo occidental. A fundación da colonia que recibiría o nome de Iulia Turris Libisonis atribúese tradicionalmente a Xulio César, arredor do ano corenta e seis antes da nosa era, ao final das guerras civís romanas; parte da historiografía, con todo, sitúa o proceso fundacional nun horizonte máis amplo, entre as reformas de César e as de Octavio Augusto. A data exacta importa menos ca o acerto da elección: o porto permitía controlar unha ampla franxa do golfo da Asinara e comunicar co interior da illa, especialmente coa fértil chaira da Nurra que acabamos de atravesar dúas veces nesta semana.' }
+      ]
+    }, {
+      id: 'dia8',
+      titulo: 'Capítulo VIII · Día 8 · A saída da illa',
+      pistas: [
+        { t: '04:30 · O porto esperta',
+          x: 'A alarma soa moito antes do amencer. Durante uns segundos custa lembrar onde estamos. Logo chega esa sensación tan característica do último día dunha viaxe: todo está preparado, non queda nada por organizar. Só queda marchar. No exterior, Porto Torres esperta lentamente. As rúas permanecen case baleiras; algún camión diríxese ao porto; as luces amarelas das farolas proxectan reflexos alongados sobre o asfalto húmido pola condensación da noite. Na cafetería próxima ao embarcadoiro hai xa movemento: condutores profesionais, traballadores do porto, viaxeiros que, coma nós, cargan mochilas, bicicletas ou conducen pequenas campers cara á fila de embarque. Pedimos un café. Quizais o mellor da viaxe. Non polo seu sabor, senón polo momento. Hai cafés que se lembran durante anos porque marcan unha despedida.' },
+        { t: '06:00 · A cuberta',
+          x: 'Cando o barco abandona lentamente o peirao, o ceo comeza apenas a clarexar. O perfil de Porto Torres afástase sen estridencias: as grúas, os peiraos, as primeiras casas. Todo vai diminuíndo ata converterse nunha liña escura sobre o horizonte. Poucos minutos despois aparecen tamén os cantís da costa norte; máis lonxe, as montañas. Aínda máis lonxe, invisibles xa para nós, permanecen os lugares que fomos coñecendo durante estes sete días: a chaira da Nurra e a torre de Santu Antine, o santuario escalonado de Accoddi, a rocha con forma de elefante e as súas casas das fadas, as rúas en espiral de Castelsardo, a gran estela de Coddu Vecchiu, o granito rosado de Capriccioli, o estreito de Bonifacio e as illas da Maddalena, o labirinto de Capo Testa, a vila de granito de Tempio, as bandas bicromas de Saccargia, as casas escavadas de Anghelu Ruju, as murallas catalás de L\'Alguer, os cantís de Capo Caccia, a auga imposible da Pelosa. A memoria non segue a orde da estrada. Constrúe outra cartografía, un mapa feito de emocións máis ca de quilómetros. Durante moito tempo, boa parte da publicidade turística resumiu Sardeña en poucas palabras: praias, augas transparentes, luxo, verán. Nada diso é falso, pero resulta profundamente insuficiente. Sardeña é unha das grandes illas históricas do Mediterráneo. Un territorio onde as distintas épocas non se destruíron mutuamente, senón que foron depositándose unhas sobre outras, como estratos xeolóxicos. Baixo unha praia pode aparecer un porto romano. Sobre un asentamento nuráxico levantouse unha igrexa medieval. Ao pé dunha torre aragonesa continúa celebrándose unha festa de orixe moito máis antiga. Cada xeración engadiu unha capa. Ningunha conseguiu borrar completamente as anteriores.' }
+      ]
+    }, {
+      id: 'epi1',
+      titulo: 'Epílogo I · A promesa pendente',
+      pistas: [
+        { t: 'O mapa do que non vimos',
+          x: 'Na cuberta do ferry, mentres a costa de Sardeña aínda conserva o seu perfil, abrimos o caderno de campo. Pensabamos atopar nel a memoria do vivido: a gran estela de Coddu Vecchiu, o silencio subterráneo de Anghelu Ruju, o vento de Capo Testa, as murallas douradas de L\'Alguer, a torre da Pelosa recortada sobre a Asinara. E todo iso está, por suposto. Pero ao seu lado, ocupando case máis páxinas, aparece outro mapa: o mapa do que non vimos. Mira canto queda, dis ti, pasando as follas. Mira canto vivimos, respondo eu. E quedamos os dous en silencio, porque as dúas frases son certas ao mesmo tempo, e nesa contradición exacta vive toda viaxe que valga a pena.' }
+      ]
+    }, {
+      id: 'epi2',
+      titulo: 'Epílogo II · Unha historia escrita con pedra, vento e mar',
+      pistas: [
+        { t: 'Unha historia escrita con pedra, vento e mar',
+          x: 'Mentres o barco se afasta definitivamente, a silueta de Sardeña vai confundíndose coa brétema da mañá. Non desaparece de golpe. Vai esvaecéndose lentamente, como fan as lembranzas máis importantes. A Vito viaxa na adega, coa porta corrediza pechada e, queremos crer, algunha lembranza de sal nos recunchos. Nós vamos na cuberta, co café aínda quente entre as mans, facendo o que sempre facemos ao rematar unha viaxe: nada. Só mirar. Pensamos entón nos miles de anos que acabamos de atravesar. Nas comunidades que escavaron as domus de janas e ás que, séculos despois, a memoria popular chamou casas das fadas. Nos construtores dos nuraghes e das tumbas dos xigantes, que ergueron a pedra ata o ceo e cara á terra para que os devanceiros non marchasen de todo. Nos mariñeiros cataláns que chegaron coa Coroa de Aragón e deixaron unha lingua que aínda resiste nas murallas de L\'Alguer. Nas cesteiras de Castelsardo que seguiron tecendo cando todo parecía cambiar ao seu redor. Na queixeira que entendeu o noso galego coma se fose alguerés de toda a vida. Todos forman parte da mesma historia. Unha historia escrita con pedra, vento e mar. Ao abandonar a illa comprendemos que Sardeña nunca nos pediu admiración. Pediunos algo moito máis difícil: que a escoitásemos. E talvez esa sexa a maior lección desta viaxe. Viaxar non consiste en conquistar lugares nin en coleccionar destinos. Consiste en aprender a mirar con suficiente calma para que un territorio poida contar a súa propia historia.' }
+      ]
+    }];
+
+    const vozSel = document.getElementById('voz-voices');
+    const vozStatus = document.getElementById('voz-status');
+    const vozRate = document.getElementById('voz-rate');
+    const vozRatev = document.getElementById('voz-ratev');
+    const vozChain = document.getElementById('voz-chain');
+    const vozBlocks = document.getElementById('voz-blocks');
+    const vozNow = document.getElementById('voz-now');
+    const vozLetra = document.getElementById('voz-letra');
+    const vozInfo = document.getElementById('voz-info');
+    const vozPlay = document.getElementById('voz-play');
+    const vozbar = document.getElementById('vozbar');
+
+    let VOICES = [];
+    let bi = 0,
+      ti = 0,
+      si = 0,
+      playing = false;
+
+    const score = l => { l = l.toLowerCase(); if (l.startsWith('gl')) return 0; if (l.startsWith('ca')) return 1; if (l
+        .startsWith('pt')) return 2; if (l.startsWith('es')) return 3; if (l.startsWith('it')) return 4; return 5; };
+    const split = t => t.match(/[^.!?…]+[.!?…]*/g) || [t];
+    const words = t => t.trim().split(/\s+/).length;
+    const dur = t => Math.round(words(t) / 2.7 * 60);
+    const fmt = s => { const m = Math.floor(s / 60),
+        r = s % 60; return m + ':' + (r < 10 ? '0' : '') + r; };
+
+    function loadVoices() {
+      VOICES = speechSynthesis.getVoices();
+      if (!VOICES.length) return;
+      VOICES.sort((a, b) => score(a.lang) - score(b.lang) || a.name.localeCompare(b.name));
+      vozSel.innerHTML = '';
+      VOICES.forEach((v, i) => { const o = document.createElement('option');
+        o.value = i;
+        o.textContent = v.name + ' · ' + v.lang + (score(v.lang) === 0 ? ' · ★ GALEGO' : '');
+        vozSel.appendChild(o); });
+      const s = localStorage.getItem('voz_sel');
+      if (s && VOICES[s]) vozSel.value = s;
+      const gl = VOICES.filter(v => score(v.lang) === 0).length;
+      vozStatus.classList.toggle('bad', gl === 0);
+      vozStatus.innerHTML = 'Voces: <b>' + VOICES.length + '</b> · galego: <b>' + gl + '</b> · ' + (gl ? '★ voz galega dispoñible!' :
+        'proba <b>portugués</b> ou <b>castelán</b>');
+    }
+    speechSynthesis.onvoiceschanged = loadVoices;
+    loadVoices();
+    vozSel.addEventListener('change', () => localStorage.setItem('voz_sel', vozSel.value));
+
+    function applyVoice(u) {
+      const v = VOICES[vozSel.value];
+      if (v) { u.voice = v;
+        u.lang = v.lang; } else u.lang = 'gl-ES';
+      u.rate = parseFloat(vozRate.value);
+    }
+
+    document.getElementById('voz-test').addEventListener('click', () => { vozStopAll(true); const u = new SpeechSynthesisUtterance(
+        'Boas tardes. Esta é a voz do libro. Sardeña agarda por nós.');
+      applyVoice(u);
+      speechSynthesis.speak(u); });
+
+    vozRate.value = localStorage.getItem('voz_rate') || '1';
+    vozRatev.textContent = vozRate.value + '×';
+    vozRate.addEventListener('input', () => { vozRatev.textContent = vozRate.value + '×';
+      localStorage.setItem('voz_rate', vozRate.value); });
+    vozChain.checked = localStorage.getItem('voz_chain') !== '0';
+    vozChain.addEventListener('change', () => localStorage.setItem('voz_chain', vozChain.checked ? '1' : '0'));
+
+    function chunk() { return split(LIBRO[bi].pistas[ti].x); }
+
+    function vozSavePos() { localStorage.setItem('voz_pos_' + LIBRO[bi].id, JSON.stringify({ t: ti, s: si })); }
+
+    function vozPaint() {
+      const b = LIBRO[bi],
+        p = b.pistas[ti];
+      vozNow.innerHTML = '<div class="nowcard"><div class="nb">' + b.titulo + '</div><div class="nt">' + p.t +
+        '</div><div style="font-size:.75rem;opacity:.85">Pista ' + (ti + 1) + '/' + b.pistas.length + ' · Frase ' + (si +
+          1) + '/' + chunk().length + (playing ? (speechSynthesis.paused ? ' · en pausa' : ' · soando') : ' · detido') +
+        '</div></div>';
+      vozInfo.textContent = b.titulo + ' — ' + p.t;
+      const ch = chunk();
+      vozLetra.style.display = 'block';
+      vozLetra.innerHTML = ch.map((c, i) => '<span class="fr' + (i < si ? ' done' : '') + (i === si && playing ? ' on' :
+        '') + '">' + c + '</span>').join('');
+      document.querySelectorAll('.pista').forEach(x => x.classList.remove('playing'));
+      const row = document.querySelector('.pista[data-b="' + bi + '"][data-t="' + ti + '"]');
+      if (row) row.classList.add('playing');
+    }
+
+    function vozSpeak() {
+      if (!playing) return;
+      const ch = chunk();
+      if (si >= ch.length) {
+        if (ti < LIBRO[bi].pistas.length - 1) { ti++;
+          si = 0;
+          vozSavePos();
+          vozPaint();
+          vozSpeak(); } else if (vozChain.checked && bi < LIBRO.length - 1) { bi++;
+          ti = 0;
+          si = 0;
+          vozSavePos();
+          vozPaint();
+          vozSpeak(); } else { playing = false;
+          vozPlay.innerHTML = '<i class="fas fa-play"></i>';
+          vozPaint(); }
+        return;
+      }
+      vozPaint();
+      const u = new SpeechSynthesisUtterance(ch[si]);
+      applyVoice(u);
+      u.onend = () => { si++;
+        vozSavePos();
+        vozSpeak(); };
+      u.onerror = () => { si++;
+        vozSpeak(); };
+      speechSynthesis.speak(u);
+    }
+
+    function vozStartTrack(b, t, s) {
+      vozStopAll(true);
+      bi = b;
+      ti = t;
+      si = s || 0;
+      playing = true;
+      vozPlay.innerHTML = '<i class="fas fa-pause"></i>';
+      vozbar.classList.add('show');
+      const bl = document.getElementById('vb_' + LIBRO[b].id);
+      if (bl) bl.open = true;
+      vozSavePos();
+      vozSpeak();
+    }
+
+    function vozStopAll(silent) {
+      playing = false;
+      speechSynthesis.cancel();
+      vozPlay.innerHTML = '<i class="fas fa-play"></i>';
+      if (!silent) { vozPaint();
+        vozbar.classList.remove('show'); }
+    }
+
+    vozPlay.addEventListener('click', () => {
+      if (playing) {
+        if (speechSynthesis.paused) { speechSynthesis.resume();
+          vozPaint(); } else { speechSynthesis.pause();
+          vozPaint(); }
+      } else {
+        if (speechSynthesis.paused) { speechSynthesis.resume();
+          playing = true;
+          vozPlay.innerHTML = '<i class="fas fa-pause"></i>';
+          vozbar.classList.add('show');
+          vozPaint();
+          return; }
+        const saved = localStorage.getItem('voz_pos_' + LIBRO[bi].id);
+        if (saved) { const p = JSON.parse(saved);
+          ti = p.t || 0;
+          si = p.s || 0; }
+        playing = true;
+        vozPlay.innerHTML = '<i class="fas fa-pause"></i>';
+        vozbar.classList.add('show');
+        vozSpeak();
+      }
+    });
+    document.getElementById('voz-stop').addEventListener('click', () => vozStopAll(false));
+    document.getElementById('voz-next').addEventListener('click', () => {
+      if (ti < LIBRO[bi].pistas.length - 1) vozStartTrack(bi, ti + 1, 0);
+      else if (bi < LIBRO.length - 1) vozStartTrack(bi + 1, 0, 0);
+    });
+    document.getElementById('voz-prev').addEventListener('click', () => {
+      if (ti > 0) vozStartTrack(bi, ti - 1, 0);
+      else if (bi > 0) vozStartTrack(bi - 1, LIBRO[bi - 1].pistas.length - 1, 0);
+    });
+    document.getElementById('voz-fwd').addEventListener('click', () => { speechSynthesis.cancel();
+      si = Math.min(si + 1, chunk().length - 1); if (playing) vozSpeak(); else vozPaint(); });
+    document.getElementById('voz-back').addEventListener('click', () => { speechSynthesis.cancel();
+      si = Math.max(si - 1, 0); if (playing) vozSpeak(); else vozPaint(); });
+
+    // INXECTAR CAPÍTULOS
+    LIBRO.forEach((b, ib) => {
+      const d = document.createElement('details');
+      d.className = 'blk';
+      d.id = 'vb_' + b.id;
+      const total = b.pistas.reduce((a, p) => a + dur(p.x), 0);
+      let h = '<summary>' + b.titulo + '<span class="meta">' + b.pistas.length + ' pistas · ~' + fmt(total) +
+        ' min</span></summary>';
+      b.pistas.forEach((p, it) => {
+        h += '<div class="pista' + (p.caixa ? ' caixa' : '') + '" data-b="' + ib + '" data-t="' + it +
+          '"><button class="btn sm go pplay"><i class="fas fa-play"></i></button><span class="pt">' + p.t +
+          '</span><span class="dur">' + fmt(dur(p.x)) + '</span></div>';
+      });
+      d.innerHTML = h;
+      vozBlocks.appendChild(d);
+    });
+    vozBlocks.addEventListener('click', e => {
+      const b = e.target.closest('.btn.pplay');
+      if (!b) return;
+      const p = b.closest('.pista');
+      vozStartTrack(+p.dataset.b, +p.dataset.t, 0);
+    });
+    vozPaint();
+
+    console.log('🚐 App unificada lista · Audiolibro cargado con ' + LIBRO.length + ' capítulos.');
+  </script>
+</body>
+</html>
